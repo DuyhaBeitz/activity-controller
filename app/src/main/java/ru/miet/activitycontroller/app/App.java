@@ -1,11 +1,13 @@
 package ru.miet.activitycontroller.app;
 
+import javafx.application.Application;
 import ru.miet.activitycontroller.core.Pinger;
+import ru.miet.activitycontroller.ui.Viewer;
 
 public class App 
 {
     public static void main( String[] args )
     {
-        Pinger.PingResult result = Pinger.runPing("https://www.youtube.com");
+        Application.launch(Viewer.class, args);
     }
 }

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>WorldMap</title>
+        <link
+            rel="stylesheet"
+            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+        <script
+            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+        </script>
+
+        <style>
+            html, body, #map
+            {
+                padding: 0;
+                margin: 0;
+                height: 100%;
+                width: 100%;
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 14px;
+                color: #323232;
+            }
+            html, body, #map
+            {
+                padding: 0;
+                margin: 0;
+                height: 100%;
+                width: 100%;
+                background-color: #f0f0f0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div id="map"></div>
+
+        <script>
+            L.Browser.any3d = false;
+            L.Browser.webkit3d = false;
+            L.Browser.gecko3d = false;
+            L.Browser.opera3d = false;
+            L.Browser.ms3d = false;
+
+            var southWest = L.latLng(-80, -190);
+            var northEast = L.latLng(85, 190);
+            var worldBounds = L.latLngBounds(southWest, northEast);
+
+            var map = L.map('map',{
+                fadeAnimation: false,
+                zoomAnimation: false,
+                markerZoomAnimation: false,
+                inertial: false,
+                attributionControl: false,
+                minZoom: 2,
+                maxZoom: 18,
+                maxBounds: worldBounds,
+                maxBoundsViscosity: 1.0
+            }).setView([20,0],2);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18,
+                bounds: worldBounds,
+                //noWrap: true,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            var markers = [];
+
+            function addServiceMarker(id, x, y, name, status)
+            {
+                // status: OK, WARNING, ERROR, CONTROL
+                var color = status === 'OK' ? 'green' : 'red';
+        
+                var marker = L.circleMarker([x, y], {
+                    radius: 10,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    fillOpacity: 0.9
+                }).addTo(map);
+
+                marker.bindTooltip(name);
+
+                marker.on('click', function() {
+                    if (window.javaApp)
+                    {
+                        window.javaApp.openDiagnostic(id);
+                    }
+                });
+
+                markers[id] = marker;
+            }
+
+            setTimeout(function() { 
+                map.invalidateSize(); 
+            }, 300);
+        </script>
+    </body>
+</html>
