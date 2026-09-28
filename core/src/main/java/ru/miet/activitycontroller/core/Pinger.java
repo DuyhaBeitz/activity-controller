@@ -6,46 +6,83 @@ import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
 public class Pinger {
+
+    public record PingResult(
+        int httpCode,
+        double dnsTime,
+        double tcpConnectTime,
+        double tlsTime,
+        double preTransferTime,
+        double redirectTime,
+        double ttfb,
+        double totalTime,
+        long size,
+        double downloadSpeed,
+        String remoteIp,
+        int remotePort,
+        String effectiveUrl
+    ) {}
+
     /**
-     * Runs tcping against a target and returns its JSON output as a String.
-     *
      * @param host    The hostname or IP address to probe (e.g., "1.1.1.1")
-     * @param port    The TCP port to probe (e.g., 22 for SSH)
      * @return The raw JSON output from tcping, or null if an error occurred.
      */
-    public static String runTcpingJson(String host, int port) {
-        String command = String.format("tcping %s %d -j", host, port);
-
+    public static PingResult runPing(String host) {
         try {
-            ProcessBuilder pb = new ProcessBuilder(command.split(" "));
-            Process process = pb.start();
+            Process process = new ProcessBuilder(
+                "curl",
+                "-sS",
+                "-L",
+                "-o", "/dev/null",
+                "-w",
+                "%{http_code}\t" +
+                "%{time_namelookup}\t" +
+                "%{time_connect}\t" +
+                "%{time_appconnect}\t" +
+                "%{time_pretransfer}\t" +
+                "%{time_redirect}\t" +
+                "%{time_starttransfer}\t" +
+                "%{time_total}\t" +
+                "%{size_download}\t" +
+                "%{speed_download}\t" +
+                "%{remote_ip}\t" +
+                "%{remote_port}\t" +
+                "%{url_effective}\n",
+                host
+            ).start();
 
-            // Capture the JSON output from stdout
-            String jsonOutput;
+            String line;
+
             try (BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
-                jsonOutput = reader.lines().collect(Collectors.joining("\n"));
-            }
-
-            // Capture stderr for debugging/logging
-            try (BufferedReader errorReader = new BufferedReader(
-                    new InputStreamReader(process.getErrorStream(), StandardCharsets.UTF_8))) {
-                String errorOutput = errorReader.lines().collect(Collectors.joining("\n"));
-                if (!errorOutput.isEmpty()) {
-                    System.err.println("tcping stderr: " + errorOutput);
-                }
+                new InputStreamReader(process.getInputStream(), StandardCharsets.UTF_8))) {
+                line = reader.readLine();
             }
 
             int exitCode = process.waitFor();
-            if (exitCode != 0) {
-                System.err.println("tcping exited with code: " + exitCode);
-                // Depending on your needs, you might still want to return the partial output.
+
+            if (exitCode != 0 || line == null) {
+                return null;
             }
 
-            return jsonOutput;
+            String[] p = line.split("\t", -1);
+
+            return new PingResult(
+                Integer.parseInt(p[0]),
+                Double.parseDouble(p[1]),
+                Double.parseDouble(p[2]),
+                Double.parseDouble(p[3]),
+                Double.parseDouble(p[4]),
+                Double.parseDouble(p[5]),
+                Double.parseDouble(p[6]),
+                Double.parseDouble(p[7]),
+                Long.parseLong(p[8]),
+                Double.parseDouble(p[9]),
+                p[10],
+                Integer.parseInt(p[11]),
+                p[12]
+            );
 
         } catch (Exception e) {
-            e.printStackTrace();
             return null;
         }
     }
