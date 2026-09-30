@@ -15,9 +15,12 @@ public class Viewer extends Application
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/scene.fxml"));
         Parent root = fxmlLoader.load();
         
-        Scene scene = new Scene(root, 1100, 700);
+        Scene scene = new Scene(root);
         stage.setTitle("Мониторинг работоспособности сервисов");
         stage.setScene(scene);
+
+        stage.setMaximized(true);
+
         stage.show();
     }
 }

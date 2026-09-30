@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.web.WebView?>
 
 <GridPane xmlns="http://javafx.com" 
           xmlns:fx="http://microsoft.com" 
-          fx:controller="ru.miet.activitycontroller.ui.MapController" 
-          prefWidth="1100" 
-          prefHeight="700">
+          fx:controller="ru.miet.activitycontroller.ui.MapController">
     
     <columnConstraints>
         <ColumnConstraints percentWidth="75.0" hgrow="ALWAYS" />
         <ColumnConstraints percentWidth="25.0" hgrow="NEVER" />
     </columnConstraints>
+    <rowConstraints>
+        <RowConstraints percentHeight="100.0" vgrow="ALWAYS" />
+    </rowConstraints>
 
     <children>
 
