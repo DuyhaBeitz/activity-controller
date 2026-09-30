@@ -74,5 +74,7 @@ public class MapController
             // вспомогательный метод
             webEngine.executeScript("addServiceMarker(1, 55.7558, 37.6173, 'Москва: Сервер ЦОД', 'OK')");
             webEngine.executeScript("addServiceMarker(2, 40.7128, -74.0060, 'Нью-Йорк: Шлюз авторизации', 'ERROR')");
+            webEngine.executeScript("addServiceMarker(3, 40.7300, -73.9950, 'Нью-Йорк: Резервный коммутатор', 'WARNING')");
+            webEngine.executeScript("addServiceMarker(3, 40.6300, -73.9050, 'Нью-Йорк: Гей-клуб', 'CONTROL')");
         }
 }
