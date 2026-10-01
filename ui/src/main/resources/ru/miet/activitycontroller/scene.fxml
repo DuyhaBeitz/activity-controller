@@ -30,7 +30,7 @@
               GridPane.rowIndex="0">
               
             <Label text="МОНИТОРИНГ" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
-            <Label text="Выберите сервис на карте..." style="-fx-text-fill: #bdc3c7;" />
+            <Label text="тут будут сервисы...." style="-fx-text-fill: #bdc3c7;" />
         </VBox>
 
     </children>

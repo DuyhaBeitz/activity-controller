@@ -9,7 +9,15 @@ package ru.miet.activitycontroller.ui;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
+import javafx.animation.KeyFrame;
+import javafx.animation.PauseTransition;
+import javafx.animation.Timeline;
+import javafx.application.Platform;
+import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
 public class MapController
 {
@@ -40,6 +48,7 @@ public class MapController
                 JSObject window = (JSObject) webEngine.executeScript("window");
                 window.setMember("javaApp", this);
                 createInitialMarkers();
+                // runDelayedUiTest();
             }
         });
 
@@ -64,17 +73,49 @@ public class MapController
         });
     }
 
-        public void openDiagnostic(int serviceId)
-        {
-            // Информация о выбранном сервисе
-        }
+    public void openDiagnostic(int serviceId)
+    {
+        // Информация о выбранном сервисе
+    }
 
-        private void createInitialMarkers()
+    private void createInitialMarkers()
+    {
+        // вспомогательный метод
+        webEngine.executeScript("addServiceMarker(1, 55.7558, 37.6173, 'Москва: Сервер ЦОД', 'OK')");
+        webEngine.executeScript("addServiceMarker(2, 40.7128, -74.0060, 'Нью-Йорк: Шлюз авторизации', 'ERROR')");
+        webEngine.executeScript("addServiceMarker(3, 40.7300, -73.9950, 'Нью-Йорк: Резервный коммутатор', 'WARNING')");
+        webEngine.executeScript("addServiceMarker(4, 40.6300, -73.9050, 'Нью-Йорк: Гей-клуб', 'CONTROL')");
+    }
+
+    // private void runDelayedUiTest()
+    // {
+    //     System.out.println("[Тест UI] Карта загружена. Таймер на 10 секунд запущен...");
+
+    //     // Создаем паузу на 10 секунд
+    //     PauseTransition pause = new PauseTransition(Duration.seconds(10));
+        
+    //     // Какое действие выполнить, когда время выйдет
+    //     pause.setOnFinished(event -> {
+    //         System.out.println("[Тест UI] 10 секунд прошло! Меняем статусы двух сервисов...");
+            
+    //         // 1. Меняем статус Сервиса 2 (Нью-Йорк) с ERROR на OK
+    //         updateServiceStatusInUI(2, "WARNING");
+            
+    //         // 2. Меняем статус Сервиса 4 (Нью-Йорк) с WARNING на ERROR
+    //         updateServiceStatusInUI(4, "OK");
+    //     });
+        
+    //     // Запускаем таймер
+    //     pause.play();
+    // }
+    public void updateServiceStatusInUI(int serviceId, String status)
+    {
+        if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
-            // вспомогательный метод
-            webEngine.executeScript("addServiceMarker(1, 55.7558, 37.6173, 'Москва: Сервер ЦОД', 'OK')");
-            webEngine.executeScript("addServiceMarker(2, 40.7128, -74.0060, 'Нью-Йорк: Шлюз авторизации', 'ERROR')");
-            webEngine.executeScript("addServiceMarker(3, 40.7300, -73.9950, 'Нью-Йорк: Резервный коммутатор', 'WARNING')");
-            webEngine.executeScript("addServiceMarker(3, 40.6300, -73.9050, 'Нью-Йорк: Гей-клуб', 'CONTROL')");
+            Platform.runLater(() -> {
+                // Вызываем простую функцию, которую мы добавили в HTML
+                webEngine.executeScript(String.format("updateServiceStatus(%d, '%s')", serviceId, status));
+            });
         }
+    }
 }
