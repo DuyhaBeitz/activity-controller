@@ -6,7 +6,7 @@ import ru.miet.activitycontroller.ui.Viewer;
 
 public class App 
 {
-    public static void main( String[] args )
+    public static void main( String[] args ) throws SQLException
     {
         Application.launch(Viewer.class, args);
     }
