@@ -4,6 +4,7 @@
         <meta charset="UTF-8">
         <title>WorldMap</title>
 
+        <!-- Ресурсы -->
         <link
             rel="stylesheet"
             href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -16,8 +17,10 @@
         <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
         <style>
+            /* Стиль для карты */
             html, body, #map
             {
+
                 padding: 0;
                 margin: 0;
                 height: 100%;
@@ -27,6 +30,7 @@
                 color: #323232;
             }
 
+            /* Стиль для маркера */
             .custom-status-marker
             {
                 display: flex;
@@ -36,7 +40,6 @@
                 color: white;
                 font-weight: bold;
                 font-size: 1.2vmin;
-                border: 0.2vmin solid white;
                 box-shadow: 0 0 0.6vmin rgba(0,0,0,0.4);
                 transition: transform 0.1s ease;
             }
@@ -45,6 +48,18 @@
                 transform: scale(1.15);
             }
 
+            /* Стиль для подсказки */
+            .responsive-tooltip {
+            font-size: 1.8vmin !important;
+            padding: 0.4vmin 0.8vmin !important;
+            border-radius: 0.4vmin !important;
+            background-color: white !important;
+            color: black !important;
+            border: none !important;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            }
+
+            /* Стиль для кластера */
             .marker-cluster
             {
                 background-clip: padding-box;
@@ -52,7 +67,6 @@
             }
             .marker-cluster div
             {
-                /* Размеры контейнера внутри кластера теперь тоже адаптивные */
                 width: 3.5vmin;
                 height: 3.5vmin;
                 margin-left: 0.5vmin;
@@ -60,21 +74,11 @@
 
                 text-align: center;
                 border-radius: 50%;
-                /* Адаптивный шрифт для цифр в кластере */
                 font: bold 1.3vmin "Helvetica Neue", Arial, Helvetica, sans-serif;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-            }
-            
-            html, body, #map
-            {
-                padding: 0;
-                margin: 0;
-                height: 100%;
-                width: 100%;
-                background-color: #f0f0f0;
-            }
+            }   
         </style>
     </head>
 
@@ -82,16 +86,19 @@
         <div id="map"></div>
 
         <script>
+            // Отключение анимаций для производительности
             L.Browser.any3d = false;
             L.Browser.webkit3d = false;
             L.Browser.gecko3d = false;
             L.Browser.opera3d = false;
             L.Browser.ms3d = false;
 
+            // Размеры карты
             var southWest = L.latLng(-80, -190);
             var northEast = L.latLng(85, 190);
             var worldBounds = L.latLngBounds(southWest, northEast);
 
+            // Инициализация карты
             var map = L.map('map',{
                 fadeAnimation: false,
                 zoomAnimation: false,
@@ -104,23 +111,27 @@
                 maxBoundsViscosity: 1.0
             }).setView([20,0], 2);
 
+            // Слои карты
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 maxZoom: 18,
-                bounds: worldBounds,
-                attribution: '© OpenStreetMap'
+                bounds: worldBounds
             }).addTo(map);
 
+            // Инициализация кластеров
             var markerClusterGroup = L.markerClusterGroup({
                 spiderfyOnMaxZoom: true,
                 showCoverageOnHover: false,
                 disableClusteringAtZoom: 16,
                 
-                iconCreateFunction: function(cluster) {
+                // Определяем создание иконки для меняющегося цвета и размера
+                iconCreateFunction: function(cluster)
+                {
                     var childMarkers = cluster.getAllChildMarkers();
                     var worstStatus = 'OK';
                     var priority = { 'OK': 1, 'WARNING': 2, 'CONTROL': 3, 'ERROR': 4 };
                     
-                    childMarkers.forEach(function(marker) {
+                    childMarkers.forEach(function(marker)
+                    {
                         var status = marker.options.serviceStatus;
                         if (priority[status] > priority[worstStatus]) {
                             worstStatus = status;
@@ -130,16 +141,21 @@
                     var color = '#95a5a6'; // Серый по умолчанию
                     var symbol = '';
                     
-                    if (worstStatus === 'OK') { color = '#2ecc71'; symbol = '✓'; }
+                    if (worstStatus === 'OK'){ color = '#2ecc71'; symbol = '✓'; }
                     else if (worstStatus === 'WARNING') { color = '#f1c40f'; symbol = '?'; }
-                    else if (worstStatus === 'ERROR') { color = '#e74c3c'; symbol = '✖'; } // Добавил символ для наглядности
+                    else if (worstStatus === 'ERROR') { color = '#e74c3c'; symbol = '✖'; }
                     else if (worstStatus === 'CONTROL') { color = '#e74c3c'; symbol = '!'; }
                     
                     var count = cluster.getChildCount();
-                    var clusterSize = getResponsiveSize(4.8);
+                    var clusterSize = getResponsiveSize(3.6);
                     
-                    var htmlContent = '<div style="background-color:' + color + '; width:100%; height:100%; border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; border:2px solid white; box-shadow:0 0 6px rgba(0,0,0,0.4);">' 
-                        + '<span style="margin-right: 2px; font-size: 85%;">' + symbol + '</span>' + count + '</div>';
+                    var htmlContent = '<div style="background-color:'+ color + 
+                    '; width:100%; height:100%; border-radius:50%;' + 
+                    'display:flex; align-items:center; justify-content:center;' +
+                    'color:white; font-weight:bold;' +
+                    'border:2px solid white; box-shadow:0 0 6px rgba(0,0,0,0.4);">' 
+                    + '<span style="margin-right: 2px; font-size: 85%;">' + symbol
+                    + '</span>' + count + '</div>';
                         
                     return new L.DivIcon({
                         className: 'custom-cluster-marker',
@@ -149,15 +165,22 @@
                 }
             });
 
+            // Добавляем кластеры в слои
             map.addLayer(markerClusterGroup);
+
+            // Массив маркеров
             var markersMap = [];
 
-            function getResponsiveSize(targetVmin) {
+            // Метод для задания адаптивного размера обьекта
+            function getResponsiveSize(targetVmin)
+            {
                 var vmin = Math.min(window.innerWidth, window.innerHeight);
                 return Math.max(18, Math.round((targetVmin / 100) * vmin));
             }
 
-            function createIconHtml(color, symbol, size) {
+            // Метод для создания html иконки
+            function createIconHtml(color, symbol, size)
+            {
                 var borderWidth = 'calc(' + (size * 0.1) + 'px)';
                 var shadowSize = 'calc(' + (size * 0.3) + 'px)';
                 
@@ -175,15 +198,17 @@
                     '">' + symbol + '</div>';
             }
 
-            function addServiceMarker(id, x, y, name, status) {
-                var color = '#95a5a6';
+            // Метод для добавления сервиса
+            function addServiceMarker(id, x, y, name, status)
+            {
+                var color = '#95a5a6'; // серый по умолчанию
                 var symbol = '';
                 if (status === 'OK') { color = '#2ecc71'; symbol = '✓'; }
                 else if (status === 'WARNING') { color = '#f1c40f'; symbol = '?'; }
-                else if (status === 'ERROR') { color = '#e74c3c'; }
+                else if (status === 'ERROR') { color = '#e74c3c'; symbol = '✖'; }
                 else if (status === 'CONTROL') { color = '#e74c3c'; symbol = '!'; }
 
-                var size = getResponsiveSize(3.2);
+                var size = getResponsiveSize(2.4);
                 var customIcon = L.divIcon({
                     className: 'custom-status-marker',
                     html: createIconHtml(color, symbol, size),
@@ -196,20 +221,29 @@
                     serviceStatus: status
                 });
 
-                marker.bindTooltip(name);
+                // Вывод имени при наведении
+                marker.bindTooltip(name, { 
+                    direction: 'top',
+                    className: 'responsive-tooltip'
+                });
 
                 marker.on('click', function() {
                     if (window.javaApp && typeof window.javaApp.openDiagnostic === 'function') {
                         window.javaApp.openDiagnostic(id);
+                        // диагностика при клике (в разработке)
                     }
                 });
 
+                // Добавляем маркер в массив и кластеры
                 markersMap[id] = marker;
                 markerClusterGroup.addLayer(marker);
             }
 
-            function updateServiceStatus(id, status) {
-                if (typeof markersMap !== 'undefined' && markersMap[id]) {
+            // Метод для обновления маркера
+            function updateServiceStatus(id, status)
+            {
+                if (typeof markersMap !== 'undefined' && markersMap[id])
+                {
                     var marker = markersMap[id];
                     
                     marker.options.serviceStatus = status;
@@ -221,7 +255,7 @@
                     else if (status === 'ERROR') { color = '#e74c3c'; }
                     else if (status === 'CONTROL') { color = '#e74c3c'; symbol = '!'; }
 
-                    var size = getResponsiveSize(3.2);
+                    var size = getResponsiveSize(2.4);
                     var newIcon = L.divIcon({
                         className: 'custom-status-marker',
                         html: createIconHtml(color, symbol, size),

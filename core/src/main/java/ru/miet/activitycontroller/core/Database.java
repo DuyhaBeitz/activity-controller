@@ -45,7 +45,7 @@ public class Database implements AutoCloseable {
 
     public List<ServerResult> getServers() throws SQLException {
         List<ServerResult> list =  new ArrayList<>();
-        var sql = "SELECT id, name, capacity FROM servers";
+        var sql = "SELECT id, name, latitude, longitude FROM servers";
 
         try (var stmt = connection.createStatement();
              var rs = stmt.executeQuery(sql)) {
@@ -63,7 +63,7 @@ public class Database implements AutoCloseable {
         return list;
     }
 
-    public void insertServer(String name, float latitude, float longitude) throws SQLException {
+    public int insertServer(String name, float latitude, float longitude) throws SQLException {
         String sql = """
             INSERT INTO servers(name, latitude, longitude)
             VALUES (?, ?, ?)
@@ -74,6 +74,14 @@ public class Database implements AutoCloseable {
             pstmt.setFloat(2, latitude);
             pstmt.setFloat(3, longitude);
             pstmt.executeUpdate();
+
+            try (var generatedKeys = pstmt.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getInt(1);
+                }
+            }
         }
+
+        return -1;
     }
 }

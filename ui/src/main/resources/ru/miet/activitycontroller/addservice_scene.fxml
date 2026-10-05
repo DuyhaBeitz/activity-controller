@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox spacing="10.0" style="-fx-background-color: #f4f6f7;"
+      xmlns="http://javafx.com" 
+      xmlns:fx="http://javafx.com"
+      fx:controller="ru.miet.activitycontroller.ui.AddServiceController">
+
+    <padding>
+        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+    </padding>
+    
+    <children>
+        <Label text="Введите название сервиса: " />
+        <TextField fx:id="nameField" promptText="Введите название"/>
+
+        <Label text="Введите широту расположения сервиса: " />
+        <TextField fx:id="latField" promptText="Введите широту"/>
+
+        <Label text="Введите долготу расположения сервиса: " />
+        <TextField fx:id="lngField" promptText="Введите долготу"/>
+
+        <Label text="Текущий статус:" />
+        <ComboBox fx:id="statusComboBox" maxWidth="1.7976931348623157E308" />
+
+        <Label/>
+
+        <Button
+            fx:id="safeButton"
+            onAction="#onSaveClick"
+            text="Добавить"
+            maxWidth="1.7976931348623157E308"
+            style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"/>
+    </children>
+</VBox>
