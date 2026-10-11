@@ -34,6 +34,13 @@ public class MapController
 
     private Database database;
 
+    private AddServiceController activeDialogController;
+
+    public WebEngine getWebEngine()
+    {
+        return this.webEngine;
+    }
+
     @FXML
     public void initialize()
     {
@@ -123,21 +130,23 @@ public class MapController
             Parent root = loader.load();
 
             AddServiceController controller = loader.getController();
+            this.activeDialogController = controller;
             controller.setDependencies(database, this);
-
-            double mainWindowWidth = mapWebView.getScene().getWidth();
-            double mainWindowHeight = mapWebView.getScene().getHeight();
-
-            double dynamicWidth = mainWindowWidth * 0.25;
-            double dynamicHeight = mainWindowHeight * 0.50;
-
-            dynamicWidth = Math.max(320.0, dynamicWidth);
-            dynamicHeight = Math.max(400.0, dynamicHeight);
 
             Stage modalStage = new Stage();
             modalStage.initModality(Modality.APPLICATION_MODAL);
             modalStage.setTitle("Добавление нового сервиса");
             modalStage.setResizable(false);
+
+            double currentWindowWidth = mapWebView.getWidth();
+            double currentWindowHeight = mapWebView.getHeight();
+
+            double dynamicWidth = currentWindowWidth > 0 ? currentWindowWidth * 0.25 : 400.0;
+            double dynamicHeight = currentWindowHeight > 0 ? currentWindowHeight * 0.50 : 600.0;
+
+            dynamicWidth = Math.max(400.0, dynamicWidth);
+            dynamicHeight = Math.max(600.0, dynamicHeight);
+
             modalStage.setScene(new Scene(root, dynamicWidth, dynamicHeight));
             modalStage.showAndWait();
         }
@@ -146,6 +155,16 @@ public class MapController
         System.err.println("Не удалось открыть модальное окно добавления: " + e.getMessage());
         e.printStackTrace();
     }
+    }
+
+    public void onCoordinatesSelected(double lat, double lng)
+    {
+        Platform.runLater(() -> {
+            if (activeDialogController != null)
+            {
+                activeDialogController.populateCoordinates(lat, lng);
+            }
+        });
     }
 
     public void addNewMarkerDirectly(int id, float lat, float lng, String name, String status)
@@ -170,7 +189,6 @@ public class MapController
         if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
             Platform.runLater(() -> {
-                // Вызываем простую функцию, которую мы добавили в HTML
                 webEngine.executeScript(String.format("updateServiceStatus(%d, '%s')", serviceId, status));
             });
         }

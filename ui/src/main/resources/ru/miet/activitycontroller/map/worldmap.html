@@ -42,6 +42,8 @@
                 font-size: 1.2vmin;
                 box-shadow: 0 0 0.6vmin rgba(0,0,0,0.4);
                 transition: transform 0.1s ease;
+                aspect-ratio: 1 / 1 !important;
+                object-fit: contain !important;
             }
             .custom-status-marker:hover
             {
@@ -88,7 +90,7 @@
         <script>
             // Отключение анимаций для производительности
             L.Browser.any3d = false;
-            L.Browser.webkit3d = false;
+            //L.Browser.webkit3d = false;
             L.Browser.gecko3d = false;
             L.Browser.opera3d = false;
             L.Browser.ms3d = false;
@@ -181,21 +183,23 @@
             // Метод для создания html иконки
             function createIconHtml(color, symbol, size)
             {
-                var borderWidth = 'calc(' + (size * 0.1) + 'px)';
-                var shadowSize = 'calc(' + (size * 0.3) + 'px)';
+                var borderWidth = Math.max(1, Math.round(size * 0.1)) + 'px';
+                var shadowSize = Math.round(size * 0.3) + 'px';
+                var fontSize = Math.round(size * 0.55) + 'px';
                 
                 return '<div style="' +
-                    'background-color:' + color + '; ' +
-                    'width:100%; height:100%; ' +
-                    'border-radius:50%; ' +
-                    'display:flex; align-items:center; justify-content:center; ' +
-                    'color:white; ' +
-                    'font-family: Arial, sans-serif; ' +
-                    'font-weight:bold; ' +
-                    'font-size: calc(' + (size * 0.55) + 'px); ' +
-                    'border: ' + borderWidth + ' solid white; ' +
-                    'box-shadow: 0 0 ' + shadowSize + ' rgba(0,0,0,0.4);' +
-                    '">' + symbol + '</div>';
+                        'background-color:' + color + '; ' +
+                        'width:100%; height:100%; ' +
+                        'border-radius:50%; ' +
+                        'display:flex; align-items:center; justify-content:center; ' +
+                        'color:white; ' +
+                        'font-family: Arial, sans-serif; ' +
+                        'font-weight:bold; ' +
+                        'font-size: ' + fontSize + '; ' +
+                        'border: ' + borderWidth + ' solid white; ' +
+                        'box-shadow: 0 0 ' + shadowSize + ' rgba(0,0,0,0.4);' +
+                        'aspect-ratio: 1 / 1;' +
+                        '">' + symbol + '</div>';
             }
 
             // Метод для добавления сервиса
@@ -212,8 +216,8 @@
                 var customIcon = L.divIcon({
                     className: 'custom-status-marker',
                     html: createIconHtml(color, symbol, size),
-                    iconSize: [size, size],
-                    iconAnchor: [size / 2, size / 2]
+                    iconSize: [1.15*size, size],
+                    iconAnchor: [1.15*size / 2, size / 2]
                 });
 
                 var marker = L.marker([x, y], {
@@ -252,7 +256,7 @@
                     var symbol = '';
                     if (status === 'OK') { color = '#2ecc71'; symbol = '✓'; }
                     else if (status === 'WARNING') { color = '#f1c40f'; symbol = '?'; }
-                    else if (status === 'ERROR') { color = '#e74c3c'; }
+                    else if (status === 'ERROR') { color = '#e74c3c'; symbol = '✖'; }
                     else if (status === 'CONTROL') { color = '#e74c3c'; symbol = '!'; }
 
                     var size = getResponsiveSize(2.4);
@@ -267,6 +271,29 @@
 
                     markerClusterGroup.refreshClusters(marker);
                 }
+            }
+
+            function enableMapClickSelection()
+            {
+                document.getElementById('map').style.cursor = 'crosshair';
+
+                map.once('click', function(e){
+                    document.getElementById('map').style.cursor = '';
+
+                    var lat = e.latlng.lat;
+                    var lng = e.latlng.lng;
+
+                    if (window.javaApp && typeof window.javaApp.onCoordinatesSelected === 'function')
+                    {
+                        window.javaApp.onCoordinatesSelected(lat, lng);
+                    }
+                });  
+            }
+
+            function disableMapClickSelection()
+            {
+                map.off('click');
+                document.getElementById('map').style.cursor = '';
             }
 
             setTimeout(function() { 

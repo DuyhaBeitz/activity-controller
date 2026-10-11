@@ -38,6 +38,34 @@ public class AddServiceController
         this.mapController = mapController;
     }
 
+    @FXML
+    private void onSelectOnMapClick()
+    {
+        try {
+            if (mapController == null) {
+                showErrorAlert("Ошибка", "Связь с главным контроллером утеряна.");
+                return;
+            }
+
+            Stage stage = (Stage) nameField.getScene().getWindow();
+            stage.hide(); 
+
+            mapController.getWebEngine().executeScript("enableMapClickSelection()");
+        } catch (Exception ex) {
+            showErrorAlert("Ошибка", ex.getMessage());
+            ex.printStackTrace();
+        }
+    }
+
+    public void populateCoordinates(double lat, double lng)
+    {
+        latField.setText(String.format(java.util.Locale.US, "%.5f", lat));
+        lngField.setText(String.format(java.util.Locale.US, "%.5f", lng));
+
+        Stage stage = (Stage) nameField.getScene().getWindow();
+        stage.show();
+    }
+
     @FXML 
     private void onSaveClick()
     {

@@ -13,29 +13,49 @@
       fx:controller="ru.miet.activitycontroller.ui.AddServiceController">
 
     <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
+        <Insets bottom="24.0" left="24.0" right="24.0" top="24.0"/>
     </padding>
     
     <children>
-        <Label text="Введите название сервиса: " />
-        <TextField fx:id="nameField" promptText="Введите название"/>
+        <Label text="Введите название сервиса: "
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+        <TextField fx:id="nameField" promptText="Введите название"
+            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
-        <Label text="Введите широту расположения сервиса: " />
-        <TextField fx:id="latField" promptText="Введите широту"/>
 
-        <Label text="Введите долготу расположения сервиса: " />
-        <TextField fx:id="lngField" promptText="Введите долготу"/>
+        <Label text="Введите широту расположения сервиса: "
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+        <TextField fx:id="latField" promptText="Введите широту"
+            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
-        <Label text="Текущий статус:" />
-        <ComboBox fx:id="statusComboBox" maxWidth="1.7976931348623157E308" />
 
-        <Label/>
+        <Label text="Введите долготу расположения сервиса: "
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+        <TextField fx:id="lngField" promptText="Введите долготу"
+            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
+
+
+        <Button
+            text="Выбрать точку на карте"
+            onAction="#onSelectOnMapClick"
+            maxWidth="1.7976931348623157E308"
+            style="-fx-background-color: #34495e; -fx-text-fill: white; -fx-font-weight: bold;
+            -fx-font-size: 1.2em; -fx-padding: 8; -fx-cursor: hand;"/>
+
+
+        <Label text="Текущий статус:"
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+        <ComboBox fx:id="statusComboBox" maxWidth="1.7976931348623157E308"
+            style="-fx-font-size: 1.3em; -fx-padding: 4;" />
+
+        <VBox VBox.vgrow="ALWAYS" />
 
         <Button
             fx:id="safeButton"
             onAction="#onSaveClick"
             text="Добавить"
             maxWidth="1.7976931348623157E308"
-            style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;"/>
+            style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;
+            -fx-cursor: hand; -fx-font-size: 1.4em; -fx-padding: 10; -fx-background-radius: 6;"/>
     </children>
 </VBox>
