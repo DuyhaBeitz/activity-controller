@@ -3,12 +3,14 @@
 <?import javafx.scene.layout.ColumnConstraints?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.HBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.web.WebView?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
 
 <GridPane xmlns="http://javafx.com" 
-          xmlns:fx="http://microsoft.com" 
+          xmlns:fx="http://javafx.com" 
           fx:controller="ru.miet.activitycontroller.ui.MapController">
     
     <columnConstraints>
@@ -26,19 +28,29 @@
                  GridPane.rowIndex="0" />
 
         <VBox spacing="15" 
-              style="-fx-background-color: #2c3e50; -fx-padding: 20;" 
+              style="-fx-background-color: #f6f6f3; -fx-padding: 20;" 
               GridPane.columnIndex="1" 
               GridPane.rowIndex="0">
               
-            <Label text="МОНИТОРИНГ" style="-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;" />
-            <Label text="тут будут сервисы...." style="-fx-text-fill: #bdc3c7;" />
+            <Label text="МОНИТОРИНГ" style="-fx-text-fill: #232853; -fx-font-size: 16px; -fx-font-weight: bold;" />
+            
+            <ScrollPane fx:id="serversScrollPane"
+                        fitToWidth="true" 
+                        VBox.vgrow="ALWAYS"
+                        style="-fx-background-color: transparent; -fx-background: #f6f6f3; -fx-border-color: transparent;">
+                <content>
+                    <VBox fx:id="serversContainer"
+                          spacing="10"
+                          style="-fx-background-color: #f6f6f3;" />
+                </content>
+            </ScrollPane>
 
             <VBox VBox.vgrow="ALWAYS"
                   alignment="BOTTOM_CENTER">
                 <Button
                     text="Добавить сервис"
                     onAction="#onAddServiceButton"
-                    style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-size: 14px;-fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
+                    style="-fx-background-color: #232853; -fx-text-fill: white; -fx-font-size: 14px;-fx-font-weight: bold; -fx-background-radius: 5; -fx-cursor: hand;"
                     maxWidth="1.7976931348623157E308"/>
             </VBox>
         </VBox>

@@ -18,19 +18,19 @@
     
     <children>
         <Label text="Введите название сервиса: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
         <TextField fx:id="nameField" promptText="Введите название"
             style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
 
         <Label text="Введите широту расположения сервиса: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
         <TextField fx:id="latField" promptText="Введите широту"
             style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
 
         <Label text="Введите долготу расположения сервиса: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
         <TextField fx:id="lngField" promptText="Введите долготу"
             style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
@@ -39,14 +39,11 @@
             text="Выбрать точку на карте"
             onAction="#onSelectOnMapClick"
             maxWidth="1.7976931348623157E308"
-            style="-fx-background-color: #34495e; -fx-text-fill: white; -fx-font-weight: bold;
+            style="-fx-background-color: #3652a1; -fx-text-fill: white; -fx-font-weight: bold;
             -fx-font-size: 1.2em; -fx-padding: 8; -fx-cursor: hand;"/>
 
-
-        <Label text="Текущий статус:"
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #2c3e50;" />
-        <ComboBox fx:id="statusComboBox" maxWidth="1.7976931348623157E308"
-            style="-fx-font-size: 1.3em; -fx-padding: 4;" />
+        <Label text="Добавьте контакты для связи: "
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
 
         <VBox VBox.vgrow="ALWAYS" />
 
@@ -55,7 +52,7 @@
             onAction="#onSaveClick"
             text="Добавить"
             maxWidth="1.7976931348623157E308"
-            style="-fx-background-color: #2ecc71; -fx-text-fill: white; -fx-font-weight: bold;
+            style="-fx-background-color: #232853; -fx-text-fill: white; -fx-font-weight: bold;
             -fx-cursor: hand; -fx-font-size: 1.4em; -fx-padding: 10; -fx-background-radius: 6;"/>
     </children>
 </VBox>

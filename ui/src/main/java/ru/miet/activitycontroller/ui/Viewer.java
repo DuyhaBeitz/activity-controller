@@ -4,6 +4,8 @@ import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.application.Platform;
 import javafx.stage.Stage;
 
 public class Viewer extends Application
@@ -22,5 +24,26 @@ public class Viewer extends Application
         stage.setMaximized(true);
 
         stage.show();
+    }
+
+    public static void showErrorAlert(String title, String content) 
+    {
+        if (Platform.isFxApplicationThread())
+        {
+            executeAlert(title, content);
+        }
+        else
+        {
+            Platform.runLater(() -> executeAlert(title, content));
+        }
+    }
+
+    private static void executeAlert(String title, String content)
+    {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(content);
+        alert.showAndWait();
     }
 }

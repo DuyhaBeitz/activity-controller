@@ -1,12 +1,10 @@
 package ru.miet.activitycontroller.ui;
 
-import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import ru.miet.activitycontroller.core.Database;
+import ru.miet.activitycontroller.core.ServerStatus;
 
 public class AddServiceController
 {
@@ -19,18 +17,9 @@ public class AddServiceController
     @FXML 
     private TextField lngField;
 
-    @FXML
-    private ComboBox<String> statusComboBox;
 
     private Database database;
     private MapController mapController;
-
-    @FXML
-    public void initialize()
-    {
-        statusComboBox.setItems(FXCollections.observableArrayList("OK", "WARNING", "ERROR", "CONTROL"));
-        statusComboBox.setValue("OK");
-    }
 
     public void setDependencies(Database database, MapController mapController)
     {
@@ -43,7 +32,7 @@ public class AddServiceController
     {
         try {
             if (mapController == null) {
-                showErrorAlert("Ошибка", "Связь с главным контроллером утеряна.");
+                Viewer.showErrorAlert("Ошибка", "Связь с главным контроллером утеряна.");
                 return;
             }
 
@@ -52,7 +41,7 @@ public class AddServiceController
 
             mapController.getWebEngine().executeScript("enableMapClickSelection()");
         } catch (Exception ex) {
-            showErrorAlert("Ошибка", ex.getMessage());
+            Viewer.showErrorAlert("Ошибка", ex.getMessage());
             ex.printStackTrace();
         }
     }
@@ -74,14 +63,14 @@ public class AddServiceController
             String name = nameField.getText().trim();
             float lat = Float.parseFloat(latField.getText().trim());
             float lng = Float.parseFloat(lngField.getText().trim());
-            String status = statusComboBox.getValue();
+            String status = "OK";
 
             if (name.isEmpty())
             {
                 throw new IllegalArgumentException("Название не может быть пустым!");
             }
 
-            int generatedId = database.insertServer(name, lat, lng);
+            int generatedId = database.insertServer(name, lat, lng, ServerStatus.valueOf(status));
 
             if (generatedId != -1)
             {
@@ -94,19 +83,11 @@ public class AddServiceController
         }
         catch (NumberFormatException ex)
         {
-            showErrorAlert("Ошибка ввода", "Координаты должны быть числами (разделитель — точка).");
+            Viewer.showErrorAlert("Ошибка ввода", "Координаты должны быть числами (разделитель — точка).");
         }
         catch (Exception ex)
         {
-            showErrorAlert("Ошибка", ex.getMessage());
+            Viewer.showErrorAlert("Ошибка", ex.getMessage());
         } 
-    }
-
-    private void showErrorAlert(String title, String content) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(content);
-        alert.showAndWait();
     }
 }

@@ -1,26 +1,21 @@
 package ru.miet.activitycontroller.ui;
 
 import javafx.stage.Modality;
-// import javafx.application.Application;
-// import javafx.fxml.FXMLLoader;
-// import javafx.scene.Parent;
-// import javafx.scene.Scene;
 import javafx.stage.Stage;
-// import java.io.IOException;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 import ru.miet.activitycontroller.core.Database;
-import javafx.animation.KeyFrame;
-import javafx.animation.PauseTransition;
-import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.util.Duration;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
+import javafx.scene.control.Button;
+import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -31,6 +26,9 @@ public class MapController
     private WebView mapWebView;
 
     private WebEngine webEngine;
+
+    @FXML
+    private VBox serversContainer;
 
     private Database database;
 
@@ -97,9 +95,26 @@ public class MapController
         });
     }
 
+    private double getResponsiveSizeJava(double targetVmin, double minPixels)
+    {
+        if (mapWebView == null) return minPixels;
+        
+        double width = mapWebView.getWidth();
+        double height = mapWebView.getHeight();
+        
+        if (width <= 0 || height <= 0) {
+            return minPixels;
+        }
+        
+        double vmin = Math.min(width, height);
+        return Math.max(minPixels, Math.round((targetVmin / 100.0) * vmin));
+    }
+
     private void loadServersFromDatabase()
     {
         if (database == null) return;
+
+        javafx.application.Platform.runLater(() -> serversContainer.getChildren().clear());
 
         try
         {
@@ -109,10 +124,15 @@ public class MapController
             for (Database.ServerResult server : servers)
             {
                 String jsCommand = String.format(java.util.Locale.US,
-                    "addServiceMarker(%d, %.6f, %.6f, '%s', 'OK')",
-                    server.id(), server.latitude(), server.longitude(), server.name().replace("'", "\\'")
+                    "addServiceMarker(%d, %.6f, %.6f, '%s', '%s')",
+                    server.id(), server.latitude(), server.longitude(), server.name().replace("'", "\\'"), server.status().name()
                 );
-                webEngine.executeScript(jsCommand);
+
+                javafx.application.Platform.runLater(() -> {
+                    webEngine.executeScript(jsCommand);
+                });
+
+                javafx.application.Platform.runLater(() -> addServerToSidePanel(server));
             }
         }
         catch (SQLException e)
@@ -138,14 +158,8 @@ public class MapController
             modalStage.setTitle("Добавление нового сервиса");
             modalStage.setResizable(false);
 
-            double currentWindowWidth = mapWebView.getWidth();
-            double currentWindowHeight = mapWebView.getHeight();
-
-            double dynamicWidth = currentWindowWidth > 0 ? currentWindowWidth * 0.25 : 400.0;
-            double dynamicHeight = currentWindowHeight > 0 ? currentWindowHeight * 0.50 : 600.0;
-
-            dynamicWidth = Math.max(400.0, dynamicWidth);
-            dynamicHeight = Math.max(600.0, dynamicHeight);
+            double dynamicWidth = getResponsiveSizeJava(25.0, 400.0);
+            double dynamicHeight = getResponsiveSizeJava(55.0, 600.0); 
 
             modalStage.setScene(new Scene(root, dynamicWidth, dynamicHeight));
             modalStage.showAndWait();
@@ -159,7 +173,7 @@ public class MapController
 
     public void onCoordinatesSelected(double lat, double lng)
     {
-        Platform.runLater(() -> {
+        javafx.application.Platform.runLater(() -> {
             if (activeDialogController != null)
             {
                 activeDialogController.populateCoordinates(lat, lng);
@@ -179,16 +193,46 @@ public class MapController
         }
     }
 
-    public void openDiagnostic(int serviceId)
+    private void addServerToSidePanel(Database.ServerResult server)
     {
-        // Информация о выбранном сервисе
+        double rowPadding = getResponsiveSizeJava(0.8, 6);
+        double circleRadius = getResponsiveSizeJava(0.7, 5);
+        double fontSize = getResponsiveSizeJava(1.6, 12);
+        double btnFontSize = getResponsiveSizeJava(1.4, 11);
+
+        HBox serverRow = new HBox(8);
+        serverRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+        serverRow.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: #e3e3e3; -fx-background-radius: 4;", rowPadding));
+        serverRow.setMaxWidth(Double.MAX_VALUE);
+
+        javafx.scene.shape.Circle statusIndicator = new javafx.scene.shape.Circle(circleRadius);
+        String color;
+        switch (server.status())
+        {
+            case OK -> color = "#2ecc71";
+            case WARNING -> color = "#f1c40f";
+            case ERROR, CONTROL -> color = "#e74c3c";
+            default -> color = "#95a5a6";
+        }
+        statusIndicator.setStyle("-fx-fill: " + color + "; -fx-stroke: white; -fx-stroke-width: 1;");
+
+        Label nameLabel = new Label(server.name());
+        nameLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize));
+        HBox.setHgrow(nameLabel, javafx.scene.layout.Priority.ALWAYS);
+        nameLabel.setMaxWidth(Double.MAX_VALUE);
+
+        Button detailsButton = new Button("Подробнее");
+        detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: %.0fpx;", btnFontSize));
+
+        serverRow.getChildren().addAll(statusIndicator, nameLabel, detailsButton);
+        serversContainer.getChildren().add(serverRow);
     }
 
     public void updateServiceStatusInUI(int serviceId, String status)
     {
         if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
-            Platform.runLater(() -> {
+            javafx.application.Platform.runLater(() -> {
                 webEngine.executeScript(String.format("updateServiceStatus(%d, '%s')", serviceId, status));
             });
         }
