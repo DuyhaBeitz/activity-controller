@@ -6,6 +6,8 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 import ru.miet.activitycontroller.core.Database;
+import ru.miet.activitycontroller.core.ServerStatus;
+import ru.miet.activitycontroller.core.Database.ServerResult;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
@@ -13,10 +15,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
-
+import javafx.scene.layout.Region;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -74,7 +77,7 @@ public class MapController
             }
         });
 
-        // Слушатель размера (ширина)
+        // Слушатель размера для карты (ширина)
         mapWebView.widthProperty().addListener((obs, oldW, newW) -> {
             if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED)
             {
@@ -84,7 +87,7 @@ public class MapController
             }
         });
 
-        // Слушатель размера (высота)
+        // Слушатель размера для карты (высота)
         mapWebView.heightProperty().addListener((obs, oldH, newH) -> {
             if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED)
             {
@@ -93,6 +96,32 @@ public class MapController
                 });
             }
         });
+
+        if (mapWebView != null)
+        {
+            javafx.application.Platform.runLater(() -> {
+                if (serversContainer != null && serversContainer.getParent() != null)
+                {
+                    VBox sidePanel = (VBox) serversContainer.getParent();
+
+                    javafx.beans.binding.DoubleBinding responsiveScale = javafx.beans.binding.Bindings.createDoubleBinding(() -> {
+                        double width = mapWebView.getWidth();
+                        double height = mapWebView.getHeight();
+                        if (width <= 0 || height <= 0) return 1.0;
+                        
+                        double vmin = Math.min(width, height);
+                        double scale = vmin / 800.0; 
+                        
+                        return Math.max(0.75, Math.min(scale, 1.75));
+                    },
+                    mapWebView.widthProperty(),
+                    mapWebView.heightProperty());
+
+                    sidePanel.scaleXProperty().bind(responsiveScale);
+                    sidePanel.scaleYProperty().bind(responsiveScale);
+                }
+            });
+        }
     }
 
     private double getResponsiveSizeJava(double targetVmin, double minPixels)
@@ -102,7 +131,8 @@ public class MapController
         double width = mapWebView.getWidth();
         double height = mapWebView.getHeight();
         
-        if (width <= 0 || height <= 0) {
+        if (width <= 0 || height <= 0)
+        {
             return minPixels;
         }
         
@@ -195,37 +225,215 @@ public class MapController
 
     private void addServerToSidePanel(Database.ServerResult server)
     {
-        double rowPadding = getResponsiveSizeJava(0.8, 6);
-        double circleRadius = getResponsiveSizeJava(0.7, 5);
-        double fontSize = getResponsiveSizeJava(1.6, 12);
-        double btnFontSize = getResponsiveSizeJava(1.4, 11);
-
         HBox serverRow = new HBox(8);
         serverRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        serverRow.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: #e3e3e3; -fx-background-radius: 4;", rowPadding));
+        serverRow.setStyle(String.format("-fx-padding: 8; -fx-background-color: #e3e3e3; -fx-background-radius: 4;"));
         serverRow.setMaxWidth(Double.MAX_VALUE);
 
-        javafx.scene.shape.Circle statusIndicator = new javafx.scene.shape.Circle(circleRadius);
+        javafx.scene.shape.Circle statusIndicator = new javafx.scene.shape.Circle(6);
         String color;
         switch (server.status())
         {
             case OK -> color = "#2ecc71";
             case WARNING -> color = "#f1c40f";
-            case ERROR, CONTROL -> color = "#e74c3c";
+            case ERROR -> color = "#e74c3c";
+            case CONTROL -> color = "#e67e22";
             default -> color = "#95a5a6";
         }
         statusIndicator.setStyle("-fx-fill: " + color + "; -fx-stroke: white; -fx-stroke-width: 1;");
 
         Label nameLabel = new Label(server.name());
-        nameLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx; -fx-font-weight: bold;", fontSize));
+        nameLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: 14px; -fx-font-weight: bold;"));
         HBox.setHgrow(nameLabel, javafx.scene.layout.Priority.ALWAYS);
         nameLabel.setMaxWidth(Double.MAX_VALUE);
 
         Button detailsButton = new Button("Подробнее");
-        detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: %.0fpx;", btnFontSize));
+        detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 12px;"));
+        detailsButton.setOnAction(e -> openServerDetailsModal(server, serverRow));
 
         serverRow.getChildren().addAll(statusIndicator, nameLabel, detailsButton);
         serversContainer.getChildren().add(serverRow);
+    }
+
+    private String setStatusText(String status)
+    {
+        String statusText = "";
+        switch (status)
+        {
+            case "OK":
+                statusText = "Все работает исправно";
+                break;
+            case "ERROR":
+                statusText = "Сервис работает некорректно. Выполните диагностику и обратитесь к системному администратору";
+                break;
+            case "CONTROL":
+                statusText = "У сервиса замечены проблемы. Уже ведутся работы по их исправлению";
+                break;
+            case "WARNING":
+                statusText = "Время ответа сервиса растет. Рекомендуется провести диагностику и следить за его дальнейшей работой";
+                break;
+            default:
+                Viewer.showErrorAlert("Ошибка", "Получен некорректный статус");
+                break;
+        }
+
+        return statusText;
+    }
+
+    private void openServerDetailsModal(ServerResult server, HBox serverRowInPanel)
+    {
+        Stage infoStage = new Stage();
+        infoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        infoStage.setTitle("Информация о сервисе");
+        infoStage.setResizable(false);
+
+        double modalWidth = getResponsiveSizeJava(40.0, 600);
+        double modalHeight = getResponsiveSizeJava(25.0, 480); 
+        double padding = getResponsiveSizeJava(2.0, 15);
+        double titleSize = getResponsiveSizeJava(2.0, 24);
+        double textSize = getResponsiveSizeJava(1.5, 16);
+
+        VBox layout = new VBox(getResponsiveSizeJava(1.5, 10));
+        layout.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: white;", padding));
+        layout.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+
+        Label titleLabel = new Label("Сервис: " + server.name());
+        titleLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx; -fx-font-weight: bold;", titleSize));
+
+        String statusText = setStatusText(server.status().name());
+
+        Label statusLabel = new Label("Текущий статус: " + statusText);
+        statusLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
+
+        // Label adminLabel = new Label();
+        // можно будет добавить несколько контактов (почта, соцсети)
+
+        layout.getChildren().addAll(titleLabel, statusLabel);
+
+        // Вспомогательный контейнер для удобного перезаписывания
+        final ServerResult[] currentServerHolder = { server };
+
+        if (currentServerHolder[0].status() == ServerStatus.ERROR ||
+            currentServerHolder[0].status() == ServerStatus.CONTROL)
+        {
+            HBox switchBox = new HBox(10);
+            switchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+            Label switchLabel = new Label("Включите, если админ взял сервис на контроль:");
+            switchLabel.setStyle(String.format("-fx-text-fill: white; -fx-font-size: %.0fpx;", textSize));
+
+            ToggleButton statusSwitch = new ToggleButton("ВЫКЛ");
+            statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white;-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
+
+            if (currentServerHolder[0].status() == ServerStatus.CONTROL)
+            {
+                statusSwitch.setSelected(true);
+                statusSwitch.setText("ВКЛ");
+                statusSwitch.setStyle(String.format("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
+            }
+
+            statusSwitch.setOnAction(e -> {
+                try
+                {
+                    ServerStatus targetStatus = statusSwitch.isSelected() ?
+                                ServerStatus.CONTROL : ServerStatus.ERROR;
+
+                    // Обновляем статус в базе данных
+
+                    currentServerHolder[0] = new Database.ServerResult(
+                        currentServerHolder[0].id(), 
+                        currentServerHolder[0].name(), 
+                        currentServerHolder[0].latitude(), 
+                        currentServerHolder[0].longitude(), 
+                        targetStatus
+                    );
+
+                    statusLabel.setText("Текущий статус: " + targetStatus.name());
+                    if (statusSwitch.isSelected()) {
+                        statusSwitch.setText("ВКЛ");
+                        statusSwitch.setStyle(String.format("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
+                    } else {
+                        statusSwitch.setText("ВЫКЛ");
+                        statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
+                    }
+
+                    if (!serverRowInPanel.getChildren().isEmpty() && serverRowInPanel.getChildren().get(0) instanceof javafx.scene.shape.Circle)
+                    {
+                        javafx.scene.shape.Circle indicator = (javafx.scene.shape.Circle) serverRowInPanel.getChildren().get(0);
+                        String indColor = (targetStatus == ServerStatus.CONTROL) ? "#e67e22" : "#e74c3c";
+                        indicator.setStyle("-fx-fill: " + indColor + "; -fx-stroke: white; -fx-stroke-width: 1;");
+                    }
+
+                    javafx.application.Platform.runLater(() -> {
+                        webEngine.executeScript(String.format("updateServiceStatus(%d, '%s')", currentServerHolder[0].id(), targetStatus.name()));
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Viewer.showErrorAlert("Ошибка изменения статуса", ex.getMessage());
+                    statusSwitch.setSelected(!statusSwitch.isSelected());
+                }
+            });
+
+            switchBox.getChildren().addAll(switchLabel, statusSwitch);
+            layout.getChildren().add(switchBox);
+        }
+
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+        VBox buttonsBox = new VBox(getResponsiveSizeJava(1.2, 15));
+        buttonsBox.setAlignment(javafx.geometry.Pos.CENTER);
+        buttonsBox.setMaxWidth(Double.MAX_VALUE);
+
+        String baseBtnStyle = "-fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: %.0fpx;";
+        String blueStyle = String.format("-fx-background-color: #3652a1; " + baseBtnStyle, textSize);
+        String darkBlueStyle = String.format("-fx-background-color: #232853; " + baseBtnStyle, textSize);
+        String redStyle = String.format("-fx-background-color: #e74c3c; " + baseBtnStyle, textSize);
+
+        Button diagnosticButton = new Button("Провести диагностику");
+        diagnosticButton.setStyle(blueStyle);
+        diagnosticButton.setMaxWidth(Double.MAX_VALUE);
+        // diagnosticButton.setOnAction();  получение подробной инфы о сервисе
+
+        HBox hButtonsBox = new HBox(getResponsiveSizeJava(1.1, 20));
+        hButtonsBox.setMaxWidth(Double.MAX_VALUE);
+        hButtonsBox.setAlignment(javafx.geometry.Pos.CENTER);
+
+        Button closeButton = new Button("Закрыть");
+        closeButton.setMaxWidth(Double.MAX_VALUE);
+        closeButton.setStyle(darkBlueStyle);
+        closeButton.setOnAction(e -> infoStage.close());
+
+        Button deleteButton = new Button("Удалить");
+        deleteButton.setStyle(redStyle);
+        deleteButton.setMaxWidth(Double.MAX_VALUE);
+        // closeButton.setOnAction(e -> {
+        //     try
+        //     {
+        //         // метод удаления сервера из базы данных
+
+        //         serversContainer.getChildren().remove(serverRowInPanel);
+        //         javafx.application.Platform.runLater(() -> {
+        //             webEngine.executeScript(String.format("if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }", currentServerHolder[0].id(), currentServerHolder[0].id(), currentServerHolder[0].id()));
+        //         });
+        //         infoStage.close();
+        //     }
+        //     catch (Exception ex)
+        //     {
+        //         Viewer.showErrorAlert("Ошибка удаления", ex.getMessage());
+        //     }
+        // });
+
+        hButtonsBox.getChildren().addAll(deleteButton, closeButton);
+        HBox.setHgrow(deleteButton, javafx.scene.layout.Priority.ALWAYS);
+        HBox.setHgrow(closeButton, javafx.scene.layout.Priority.ALWAYS);
+
+        buttonsBox.getChildren().addAll(diagnosticButton, hButtonsBox);
+        layout.getChildren().addAll(spacer, buttonsBox);
+
+        infoStage.setScene(new Scene(layout, modalWidth, modalHeight));
+        infoStage.showAndWait();
     }
 
     public void updateServiceStatusInUI(int serviceId, String status)
