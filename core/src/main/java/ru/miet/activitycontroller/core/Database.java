@@ -13,7 +13,8 @@ public class Database implements AutoCloseable {
             String name,
             float latitude,
             float longitude,
-            ServerStatus status
+            ServerStatus status,
+            String address
     ) {}
 
     private static final String url = "jdbc:sqlite:sample.db";
@@ -35,7 +36,8 @@ public class Database implements AutoCloseable {
                 + " name TEXT NOT NULL,\n"
                 + " latitude REAL NOT NULL,\n"
                 + " longitude REAL NOT NULL,\n"
-                + " status TEXT NOT NULL\n"
+                + " status TEXT NOT NULL,\n"
+                + " address TEXT NOT NULL\n"
                 + ");";
 
         try (var stmt = connection.createStatement()) {
@@ -47,7 +49,7 @@ public class Database implements AutoCloseable {
 
     public List<ServerResult> getServers() throws SQLException {
         List<ServerResult> list =  new ArrayList<>();
-        var sql = "SELECT id, name, latitude, longitude, status FROM servers";
+        var sql = "SELECT id, name, latitude, longitude, status, address FROM servers";
 
         try (var stmt = connection.createStatement();
              var rs = stmt.executeQuery(sql)) {
@@ -57,7 +59,8 @@ public class Database implements AutoCloseable {
                         rs.getString("name"),
                         rs.getFloat("latitude"),
                         rs.getFloat("longitude"),
-                        ServerStatus.valueOf(rs.getString("status"))
+                        ServerStatus.valueOf(rs.getString("status")),
+                        rs.getString("address")
                 ));
             }
         } catch (SQLException e) {
@@ -66,10 +69,9 @@ public class Database implements AutoCloseable {
         return list;
     }
 
-    public int insertServer(String name, float latitude, float longitude, ServerStatus status) throws SQLException {
+    public int insertServer(String name, float latitude, float longitude, ServerStatus status, String address) throws SQLException {
         String sql = """
-            INSERT INTO servers(name, latitude, longitude, status)
-            VALUES (?, ?, ?, ?)
+        INSERT INTO servers(name, latitude, longitude, status, address) VALUES (?, ?, ?, ?, ?)
             """;
 
         try (var pstmt = connection.prepareStatement(sql)) {
@@ -77,6 +79,7 @@ public class Database implements AutoCloseable {
             pstmt.setFloat(2, latitude);
             pstmt.setFloat(3, longitude);
             pstmt.setString(4, status.name());
+            pstmt.setString(5, address);
             pstmt.executeUpdate();
 
             try (var generatedKeys = pstmt.getGeneratedKeys()) {
@@ -87,5 +90,15 @@ public class Database implements AutoCloseable {
         }
 
         return -1;
+    }
+
+    public void updateServerStatus(int id, ServerStatus status) throws SQLException {
+        String sql = "UPDATE servers SET status = ? WHERE id = ?";
+
+        try (var pstmt = connection.prepareStatement(sql)) {
+            pstmt.setString(1, status.name());
+            pstmt.setInt(2, id);
+            pstmt.executeUpdate();
+        }
     }
 }
