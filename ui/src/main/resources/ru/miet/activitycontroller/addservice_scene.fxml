@@ -42,6 +42,11 @@
             style="-fx-background-color: #3652a1; -fx-text-fill: white; -fx-font-weight: bold;
             -fx-font-size: 1.2em; -fx-padding: 8; -fx-cursor: hand;"/>
 
+        <Label text="Введите адрес сервера: "
+            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+        <TextField fx:id="addressField" promptText="Введите адрес"
+            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
+
         <Label text="Добавьте контакты для связи: "
             style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
 

@@ -203,7 +203,7 @@
             }
 
             // Метод для добавления сервиса
-            function addServiceMarker(id, x, y, name, status)
+            function addServiceMarker(id, x, y, name, status, address)
             {
                 var color = '#95a5a6'; // серый по умолчанию
                 var symbol = '';
@@ -244,7 +244,7 @@
             }
 
             // Метод для обновления маркера
-            function updateServiceStatus(id, status)
+            function updateServiceMarkerStatus(id, status)
             {
                 if (typeof markersMap !== 'undefined' && markersMap[id])
                 {
@@ -263,8 +263,8 @@
                     var newIcon = L.divIcon({
                         className: 'custom-status-marker',
                         html: createIconHtml(color, symbol, size),
-                        iconSize: [size, size],
-                        iconAnchor: [size / 2, size / 2]
+                        iconSize: [1.15*size, size],
+                        iconAnchor: [1.15*size / 2, size / 2]
                     });
 
                     marker.setIcon(newIcon);

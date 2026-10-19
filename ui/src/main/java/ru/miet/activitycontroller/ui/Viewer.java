@@ -21,7 +21,13 @@ public class Viewer extends Application
         stage.setTitle("Мониторинг работоспособности сервисов");
         stage.setScene(scene);
 
-        stage.setMaximized(true);
+        javafx.stage.Screen screen = javafx.stage.Screen.getPrimary();
+        javafx.geometry.Rectangle2D bounds = screen.getVisualBounds();
+
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
 
         stage.show();
     }

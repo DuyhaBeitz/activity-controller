@@ -20,6 +20,8 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+
+import java.security.Provider.Service;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -110,9 +112,9 @@ public class MapController
                         if (width <= 0 || height <= 0) return 1.0;
                         
                         double vmin = Math.min(width, height);
-                        double scale = vmin / 800.0; 
+                        double scale = vmin / 650.0; 
                         
-                        return Math.max(0.75, Math.min(scale, 1.75));
+                        return Math.max(1.15, Math.min(scale, 2.0));
                     },
                     mapWebView.widthProperty(),
                     mapWebView.heightProperty());
@@ -154,8 +156,8 @@ public class MapController
             for (Database.ServerResult server : servers)
             {
                 String jsCommand = String.format(java.util.Locale.US,
-                    "addServiceMarker(%d, %.6f, %.6f, '%s', '%s')",
-                    server.id(), server.latitude(), server.longitude(), server.name().replace("'", "\\'"), server.status().name()
+                    "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
+                    server.id(), server.latitude(), server.longitude(), server.name().replace("'", "\\'"), server.status().name(), server.address()
                 );
 
                 javafx.application.Platform.runLater(() -> {
@@ -211,16 +213,28 @@ public class MapController
         });
     }
 
-    public void addNewMarkerDirectly(int id, float lat, float lng, String name, String status)
+    public void addNewMarkerDirectly(int id, float lat, float lng, String name, String status, String address)
     {
         if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
             String jsCommand = String.format(java.util.Locale.US,
-            "addServiceMarker(%d, %.6f, %.6f, '%s', '%s')",
-            id, lat, lng, name.replace("'", "\\'"), status);
+            "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
+            id, lat, lng, name.replace("'", "\\'"), status, address);
 
             webEngine.executeScript(jsCommand);
         }
+
+        javafx.application.Platform.runLater(() -> {
+            try
+            {
+                ServerResult server = new ServerResult(id, name, lat, lng, ServerStatus.valueOf(status), address);
+                addServerToSidePanel(server);
+            }
+            catch(Exception e)
+            {
+                Viewer.showErrorAlert("Ошибка", "Критическая ошибка при добавлении сервиса, попробуйте снова");
+            }
+        });
     }
 
     private void addServerToSidePanel(Database.ServerResult server)
@@ -299,11 +313,15 @@ public class MapController
 
         Label titleLabel = new Label("Сервис: " + server.name());
         titleLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx; -fx-font-weight: bold;", titleSize));
+        titleLabel.setWrapText(true);
+        titleLabel.setMaxWidth(Double.MAX_VALUE);
 
         String statusText = setStatusText(server.status().name());
 
         Label statusLabel = new Label("Текущий статус: " + statusText);
         statusLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
+        statusLabel.setWrapText(true);
+        statusLabel.setMaxWidth(Double.MAX_VALUE);
 
         // Label adminLabel = new Label();
         // можно будет добавить несколько контактов (почта, соцсети)
@@ -318,9 +336,14 @@ public class MapController
         {
             HBox switchBox = new HBox(10);
             switchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+            switchBox.setMaxWidth(Double.MAX_VALUE);
 
             Label switchLabel = new Label("Включите, если админ взял сервис на контроль:");
             switchLabel.setStyle(String.format("-fx-text-fill: white; -fx-font-size: %.0fpx;", textSize));
+            switchLabel.setWrapText(true);
+
+            HBox.setHgrow(switchLabel, javafx.scene.layout.Priority.ALWAYS);
+            switchLabel.setMaxWidth(Double.MAX_VALUE);
 
             ToggleButton statusSwitch = new ToggleButton("ВЫКЛ");
             statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white;-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
@@ -345,10 +368,11 @@ public class MapController
                         currentServerHolder[0].name(), 
                         currentServerHolder[0].latitude(), 
                         currentServerHolder[0].longitude(), 
-                        targetStatus
+                        targetStatus,
+                        currentServerHolder[0].address()
                     );
 
-                    statusLabel.setText("Текущий статус: " + targetStatus.name());
+                    statusLabel.setText("Текущий статус: " + setStatusText(targetStatus.name()));
                     if (statusSwitch.isSelected()) {
                         statusSwitch.setText("ВКЛ");
                         statusSwitch.setStyle(String.format("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
@@ -357,7 +381,7 @@ public class MapController
                         statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
                     }
 
-                    if (!serverRowInPanel.getChildren().isEmpty() && serverRowInPanel.getChildren().get(0) instanceof javafx.scene.shape.Circle)
+                    if (serverRowInPanel != null && !serverRowInPanel.getChildren().isEmpty() && serverRowInPanel.getChildren().get(0) instanceof javafx.scene.shape.Circle)
                     {
                         javafx.scene.shape.Circle indicator = (javafx.scene.shape.Circle) serverRowInPanel.getChildren().get(0);
                         String indColor = (targetStatus == ServerStatus.CONTROL) ? "#e67e22" : "#e74c3c";
@@ -365,7 +389,7 @@ public class MapController
                     }
 
                     javafx.application.Platform.runLater(() -> {
-                        webEngine.executeScript(String.format("updateServiceStatus(%d, '%s')", currentServerHolder[0].id(), targetStatus.name()));
+                        webEngine.executeScript(String.format("updateServiceMarkerStatus(%d, '%s')", currentServerHolder[0].id(), targetStatus.name()));
                     });
                 }
                 catch (Exception ex)
@@ -441,7 +465,7 @@ public class MapController
         if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
             javafx.application.Platform.runLater(() -> {
-                webEngine.executeScript(String.format("updateServiceStatus(%d, '%s')", serviceId, status));
+                webEngine.executeScript(String.format("updateServiceMarkerStatus(%d, '%s')", serviceId, status));
             });
         }
     }
