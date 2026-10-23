@@ -7,7 +7,11 @@ import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 import ru.miet.activitycontroller.core.Database;
 import ru.miet.activitycontroller.core.ServerStatus;
+import ru.miet.activitycontroller.core.Service;
 import ru.miet.activitycontroller.core.Database.ServerResult;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
@@ -21,7 +25,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 
-import java.security.Provider.Service;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -43,6 +46,8 @@ public class MapController
     {
         return this.webEngine;
     }
+
+    private ScheduledExecutorService monitoringScheduler;
 
     @FXML
     public void initialize()
@@ -76,6 +81,8 @@ public class MapController
                 window.setMember("javaApp", this);
 
                 loadServersFromDatabase();
+
+                startAutoMonitoring();
             }
         });
 
@@ -460,13 +467,89 @@ public class MapController
         infoStage.showAndWait();
     }
 
-    public void updateServiceStatusInUI(int serviceId, String status)
+    public void startAutoMonitoring()
     {
-        if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
+        if (monitoringScheduler != null && !monitoringScheduler.isShutdown())
         {
-            javafx.application.Platform.runLater(() -> {
-                webEngine.executeScript(String.format("updateServiceMarkerStatus(%d, '%s')", serviceId, status));
-            });
+            monitoringScheduler.shutdown();
+        }
+
+        monitoringScheduler = Executors.newSingleThreadScheduledExecutor(runnable -> {
+            Thread thread = new Thread(runnable);
+            thread.setDaemon(true);
+            return thread;
+        });
+
+        monitoringScheduler.scheduleAtFixedRate(() -> {
+            try
+            {
+                Service.update(this.database);
+
+                Platform.runLater(this::refreshAllUiComponents);
+            }
+            catch(Exception e)
+            {
+                System.err.println("Ошибка при фоновом опросе серверов: " + e.getMessage());
+            }
+        }, 0, 5, TimeUnit.SECONDS);
+    }
+
+    private void refreshAllUiComponents()
+    {
+        if (database == null) return;
+
+        try
+        {
+            List<ServerResult> updatedServers = database.getServers();
+
+            if (serversContainer != null)
+            {
+                serversContainer.getChildren().clear();
+            }
+
+            for (ServerResult server : updatedServers)
+            {
+                webEngine.executeScript(String.format(
+                "if (typeof updateServiceMarkerStatus === 'function') { updateServiceMarkerStatus(%d, '%s'); }", 
+                server.id(), server.status().name()
+                ));
+
+                addServerToSidePanel(server);
+            }
+
+            System.out.println("Информация о серверах обновлена!");
+        }
+        catch(Exception e)
+        {
+            System.out.println("Ошибка обновления интерфейса");
+        }
+    }
+    
+    public void shutdownMonitoring()
+    {
+        if (monitoringScheduler != null && !monitoringScheduler.isShutdown())
+        {
+            monitoringScheduler.shutdown();
+        }
+
+        try
+        {
+            if (monitoringScheduler != null)
+            {
+                if (!monitoringScheduler.awaitTermination(2, TimeUnit.SECONDS))
+                {
+                    monitoringScheduler.shutdownNow();
+                }
+            }
+
+            if (database != null)
+            {
+                database.close();
+            }
+        }
+        catch(Exception e)
+        {
+            monitoringScheduler.shutdownNow();
         }
     }
 }

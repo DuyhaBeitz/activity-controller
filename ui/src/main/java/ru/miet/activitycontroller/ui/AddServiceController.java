@@ -1,9 +1,11 @@
 package ru.miet.activitycontroller.ui;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import ru.miet.activitycontroller.core.Database;
+import ru.miet.activitycontroller.core.Database.ServerResult;
 import ru.miet.activitycontroller.core.ServerStatus;
 
 public class AddServiceController
@@ -120,7 +122,6 @@ public class AddServiceController
 
             if (generatedId != -1)
             {
-                mapController.updateServiceStatusInUI(generatedId, status);
                 mapController.addNewMarkerDirectly(generatedId, lat, lng, name, status, address);
             }
 

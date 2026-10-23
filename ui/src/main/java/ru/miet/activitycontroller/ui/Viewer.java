@@ -16,6 +16,8 @@ public class Viewer extends Application
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/scene.fxml"));
         Parent root = fxmlLoader.load();
+
+        MapController mapController = fxmlLoader.getController();
         
         Scene scene = new Scene(root);
         stage.setTitle("Мониторинг работоспособности сервисов");
@@ -28,6 +30,18 @@ public class Viewer extends Application
         stage.setY(bounds.getMinY());
         stage.setWidth(bounds.getWidth());
         stage.setHeight(bounds.getHeight());
+
+        stage.setOnCloseRequest(windowEvent -> {
+            System.out.println("Закрытие приложения. Очищаем ресурсы...");
+
+            if (mapController != null)
+            {
+                mapController.shutdownMonitoring();
+            }
+
+            javafx.application.Platform.exit();
+            System.exit(0);
+        });
 
         stage.show();
     }
