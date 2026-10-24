@@ -101,4 +101,34 @@ public class Database implements AutoCloseable {
             pstmt.executeUpdate();
         }
     }
+
+    public ServerResult getServer(int id) throws SQLException {
+        var sql = "SELECT * FROM servers WHERE id = ?;";
+        try (var stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            try (var rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new ServerResult(
+                            rs.getInt("id"),
+                            rs.getString("name"),
+                            rs.getFloat("latitude"),
+                            rs.getFloat("longitude"),
+                            ServerStatus.valueOf(rs.getString("status")),
+                            rs.getString("address")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println(e.getMessage());
+        }
+        return null;
+    }
+
+    public void removeServer(int id) throws SQLException {
+        var sql = "DELETE FROM servers WHERE id = ?;";
+        try (var stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        }
+    }
 }
