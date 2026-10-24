@@ -16,6 +16,7 @@ import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
@@ -36,7 +37,16 @@ public class MapController
     private WebEngine webEngine;
 
     @FXML
+    private VBox sidePanel;
+
+    @FXML
     private VBox serversContainer;
+
+    @FXML
+    private Label mainLabel;
+
+    @FXML
+    private Button addServiceButton;
 
     private Database database;
 
@@ -80,6 +90,7 @@ public class MapController
                 JSObject window = (JSObject) webEngine.executeScript("window");
                 window.setMember("javaApp", this);
 
+                webEngine.executeScript("window.deviceScreenScale = " + LayoutScale.getScreenScale() + ";");
                 loadServersFromDatabase();
 
                 startAutoMonitoring();
@@ -109,44 +120,19 @@ public class MapController
         if (mapWebView != null)
         {
             javafx.application.Platform.runLater(() -> {
-                if (serversContainer != null && serversContainer.getParent() != null)
+                if (sidePanel != null)
                 {
-                    VBox sidePanel = (VBox) serversContainer.getParent();
-
-                    javafx.beans.binding.DoubleBinding responsiveScale = javafx.beans.binding.Bindings.createDoubleBinding(() -> {
-                        double width = mapWebView.getWidth();
-                        double height = mapWebView.getHeight();
-                        if (width <= 0 || height <= 0) return 1.0;
-                        
-                        double vmin = Math.min(width, height);
-                        double scale = vmin / 650.0; 
-                        
-                        return Math.max(1.15, Math.min(scale, 2.0));
-                    },
-                    mapWebView.widthProperty(),
-                    mapWebView.heightProperty());
-
-                    sidePanel.scaleXProperty().bind(responsiveScale);
-                    sidePanel.scaleYProperty().bind(responsiveScale);
+                    sidePanel.setMinWidth(LayoutScale.scaled(320.0));
+                    sidePanel.setSpacing(LayoutScale.scaled(15.0));
+                    sidePanel.setPadding(new Insets(LayoutScale.scaled(20.0)));
                 }
+                if (serversContainer != null)
+                {
+                    serversContainer.setSpacing(LayoutScale.scaled(10.0));
+                }
+                updateMainUiStyles();
             });
         }
-    }
-
-    private double getResponsiveSizeJava(double targetVmin, double minPixels)
-    {
-        if (mapWebView == null) return minPixels;
-        
-        double width = mapWebView.getWidth();
-        double height = mapWebView.getHeight();
-        
-        if (width <= 0 || height <= 0)
-        {
-            return minPixels;
-        }
-        
-        double vmin = Math.min(width, height);
-        return Math.max(minPixels, Math.round((targetVmin / 100.0) * vmin));
     }
 
     private void loadServersFromDatabase()
@@ -197,8 +183,8 @@ public class MapController
             modalStage.setTitle("Добавление нового сервиса");
             modalStage.setResizable(false);
 
-            double dynamicWidth = getResponsiveSizeJava(25.0, 400.0);
-            double dynamicHeight = getResponsiveSizeJava(55.0, 600.0); 
+            double dynamicWidth = LayoutScale.scaled(400.0);
+            double dynamicHeight = LayoutScale.scaled(600.0);
 
             modalStage.setScene(new Scene(root, dynamicWidth, dynamicHeight));
             modalStage.showAndWait();
@@ -248,10 +234,12 @@ public class MapController
     {
         HBox serverRow = new HBox(8);
         serverRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        serverRow.setStyle(String.format("-fx-padding: 8; -fx-background-color: #e3e3e3; -fx-background-radius: 4;"));
+        int padding = (int) LayoutScale.scaled(8);
+        serverRow.setStyle(String.format("-fx-padding: " + padding + "; -fx-background-color: #e3e3e3; -fx-background-radius: 4;"));
         serverRow.setMaxWidth(Double.MAX_VALUE);
 
-        javafx.scene.shape.Circle statusIndicator = new javafx.scene.shape.Circle(6);
+        int radius = (int) LayoutScale.scaled(6);
+        javafx.scene.shape.Circle statusIndicator = new javafx.scene.shape.Circle(radius);
         String color;
         switch (server.status())
         {
@@ -264,12 +252,14 @@ public class MapController
         statusIndicator.setStyle("-fx-fill: " + color + "; -fx-stroke: white; -fx-stroke-width: 1;");
 
         Label nameLabel = new Label(server.name());
-        nameLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: 14px; -fx-font-weight: bold;"));
+        double labelFontSize = LayoutScale.scaled(14);
+        nameLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: " + labelFontSize + "; -fx-font-weight: bold;"));
         HBox.setHgrow(nameLabel, javafx.scene.layout.Priority.ALWAYS);
         nameLabel.setMaxWidth(Double.MAX_VALUE);
 
         Button detailsButton = new Button("Подробнее");
-        detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: 12px;"));
+        double buttonFontSize = LayoutScale.scaled(12);
+        detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: " + buttonFontSize + ";"));
         detailsButton.setOnAction(e -> openServerDetailsModal(server, serverRow));
 
         serverRow.getChildren().addAll(statusIndicator, nameLabel, detailsButton);
@@ -308,13 +298,14 @@ public class MapController
         infoStage.setTitle("Информация о сервисе");
         infoStage.setResizable(false);
 
-        double modalWidth = getResponsiveSizeJava(40.0, 600);
-        double modalHeight = getResponsiveSizeJava(25.0, 480); 
-        double padding = getResponsiveSizeJava(2.0, 15);
-        double titleSize = getResponsiveSizeJava(2.0, 24);
-        double textSize = getResponsiveSizeJava(1.5, 16);
+        double targetWidth = LayoutScale.scaled(420.0);
+        double targetHeight = LayoutScale.scaled(540.0);
 
-        VBox layout = new VBox(getResponsiveSizeJava(1.5, 10));
+        double textSize = LayoutScale.scaled(16.0);
+        double titleSize = LayoutScale.scaled(24.0);
+        double padding = LayoutScale.scaled(15);
+
+        VBox layout = new VBox(LayoutScale.scaled(15));
         layout.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: white;", padding));
         layout.setAlignment(javafx.geometry.Pos.TOP_LEFT);
 
@@ -341,7 +332,7 @@ public class MapController
         if (currentServerHolder[0].status() == ServerStatus.ERROR ||
             currentServerHolder[0].status() == ServerStatus.CONTROL)
         {
-            HBox switchBox = new HBox(10);
+            HBox switchBox = new HBox(LayoutScale.scaled(15));
             switchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
             switchBox.setMaxWidth(Double.MAX_VALUE);
 
@@ -354,6 +345,7 @@ public class MapController
 
             ToggleButton statusSwitch = new ToggleButton("ВЫКЛ");
             statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white;-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
+            statusSwitch.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
 
             if (currentServerHolder[0].status() == ServerStatus.CONTROL)
             {
@@ -413,7 +405,7 @@ public class MapController
         Region spacer = new Region();
         VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
-        VBox buttonsBox = new VBox(getResponsiveSizeJava(1.2, 15));
+        VBox buttonsBox = new VBox(LayoutScale.scaled(15));
         buttonsBox.setAlignment(javafx.geometry.Pos.CENTER);
         buttonsBox.setMaxWidth(Double.MAX_VALUE);
 
@@ -427,7 +419,7 @@ public class MapController
         diagnosticButton.setMaxWidth(Double.MAX_VALUE);
         // diagnosticButton.setOnAction();  получение подробной инфы о сервисе
 
-        HBox hButtonsBox = new HBox(getResponsiveSizeJava(1.1, 20));
+        HBox hButtonsBox = new HBox(LayoutScale.scaled(20));
         hButtonsBox.setMaxWidth(Double.MAX_VALUE);
         hButtonsBox.setAlignment(javafx.geometry.Pos.CENTER);
 
@@ -463,7 +455,7 @@ public class MapController
         buttonsBox.getChildren().addAll(diagnosticButton, hButtonsBox);
         layout.getChildren().addAll(spacer, buttonsBox);
 
-        infoStage.setScene(new Scene(layout, modalWidth, modalHeight));
+        infoStage.setScene(new Scene(layout, targetWidth, targetHeight));
         infoStage.showAndWait();
     }
 
@@ -494,6 +486,21 @@ public class MapController
         }, 0, 5, TimeUnit.SECONDS);
     }
 
+    private void updateMainUiStyles()
+    {
+        double labelFontSize = LayoutScale.scaled(18);
+        double buttonFontSize = LayoutScale.scaled(14);
+
+        if (mainLabel != null)
+        {
+            mainLabel.setStyle("-fx-font-size: " + labelFontSize + "px; -fx-text-fill: #232853; -fx-font-weight: bold;");
+        }
+        if (addServiceButton != null)
+        {
+            addServiceButton.setStyle("-fx-background-color: #232853; -fx-text-fill: white; -fx-font-size: " + buttonFontSize + "px; -fx-font-weight: bold; -fx-background-radius: 5px; -fx-cursor: hand;");
+        }
+        
+    }
     private void refreshAllUiComponents()
     {
         if (database == null) return;
@@ -506,6 +513,10 @@ public class MapController
             {
                 serversContainer.getChildren().clear();
             }
+
+            serversContainer.setSpacing(LayoutScale.scaled(10.0));
+
+            updateMainUiStyles();
 
             for (ServerResult server : updatedServers)
             {
