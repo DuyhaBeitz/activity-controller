@@ -5,6 +5,8 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.binding.DoubleBinding;
 import javafx.beans.value.ObservableDoubleValue;
 
+import java.awt.*;
+
 public class LayoutScale
 {
     private static final double SCREEN_SCALE;
@@ -17,7 +19,8 @@ public class LayoutScale
 
             if (primary != null)
             {
-                scale = primary.getOutputScaleX();
+                double screenWidth = Toolkit.getDefaultToolkit().getScreenSize().getWidth();
+                scale = screenWidth / 1920.0;
             }
         }
         catch(Exception e)
