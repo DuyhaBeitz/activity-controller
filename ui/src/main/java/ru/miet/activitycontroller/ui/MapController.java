@@ -431,22 +431,22 @@ public class MapController
         Button deleteButton = new Button("Удалить");
         deleteButton.setStyle(redStyle);
         deleteButton.setMaxWidth(Double.MAX_VALUE);
-        // closeButton.setOnAction(e -> {
-        //     try
-        //     {
-        //         // метод удаления сервера из базы данных
+        deleteButton.setOnAction(e -> {
+            try
+            {
+                database.removeServer(server.id());
 
-        //         serversContainer.getChildren().remove(serverRowInPanel);
-        //         javafx.application.Platform.runLater(() -> {
-        //             webEngine.executeScript(String.format("if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }", currentServerHolder[0].id(), currentServerHolder[0].id(), currentServerHolder[0].id()));
-        //         });
-        //         infoStage.close();
-        //     }
-        //     catch (Exception ex)
-        //     {
-        //         Viewer.showErrorAlert("Ошибка удаления", ex.getMessage());
-        //     }
-        // });
+                serversContainer.getChildren().remove(serverRowInPanel);
+                javafx.application.Platform.runLater(() -> {
+                    webEngine.executeScript(String.format("if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }", currentServerHolder[0].id(), currentServerHolder[0].id(), currentServerHolder[0].id()));
+                });
+                infoStage.close();
+            }
+            catch (Exception ex)
+            {
+                Viewer.showErrorAlert("Ошибка удаления", ex.getMessage());
+            }
+        });
 
         hButtonsBox.getChildren().addAll(deleteButton, closeButton);
         HBox.setHgrow(deleteButton, javafx.scene.layout.Priority.ALWAYS);

@@ -177,11 +177,7 @@
             function getResponsiveSize(targetVmin)
             {
                 var vmin = Math.min(window.innerWidth, window.innerHeight);
-                var baseSize = Math.max(18, Math.round((targetVmin / 100) * vmin));
-
-                var scale = window.deviceScreenScale || 1.0;
-
-                return Math.max(16 * scale, Math.round(baseSize * scale));
+                return Math.max(20, Math.round((targetVmin / 100) * vmin));
             }
 
             // Метод для создания html иконки

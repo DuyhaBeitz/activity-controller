@@ -15,13 +15,8 @@ public class LayoutScale
         double scale = 1.0;
         try
         {
-            Screen primary = Screen.getPrimary();
-
-            if (primary != null)
-            {
-                double screenWidth = Toolkit.getDefaultToolkit().getScreenSize().getWidth();
-                scale = screenWidth / 1920.0;
-            }
+            double screenWidth = Toolkit.getDefaultToolkit().getScreenSize().getWidth();
+            scale = screenWidth / 1920.0;
         }
         catch(Exception e)
         {
