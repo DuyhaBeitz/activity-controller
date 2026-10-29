@@ -21,7 +21,39 @@ public class Pinger {
         String remoteIp,
         int remotePort,
         String effectiveUrl
-    ) {}
+    ) {
+        @Override
+        public String toString() {
+            return String.format(
+                "httpCode: %d%n" +
+                "dnsTime: %.6f%n" +
+                "tcpConnectTime: %.6f%n" +
+                "tlsTime: %.6f%n" +
+                "preTransferTime: %.6f%n" +
+                "redirectTime: %.6f%n" +
+                "ttfb: %.6f%n" +
+                "totalTime: %.6f%n" +
+                "size: %d%n" +
+                "downloadSpeed: %.2f%n" +
+                "remoteIp: %s%n" +
+                "remotePort: %d%n" +
+                "effectiveUrl: %s",
+                httpCode,
+                dnsTime,
+                tcpConnectTime,
+                tlsTime,
+                preTransferTime,
+                redirectTime,
+                ttfb,
+                totalTime,
+                size,
+                downloadSpeed,
+                remoteIp,
+                remotePort,
+                effectiveUrl
+            );
+        }
+    }
 
     /**
      * @param host    The hostname or IP address to probe (e.g., "1.1.1.1")
