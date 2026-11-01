@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+
+<VBox
+    xmlns="http://javafx.com"
+    xmlns:fx="http://javafx.com"
+    fx:id="rootLayout"
+    spacing="15.0"
+    style="-fx-background-color: white;">
+
+    <padding>
+        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0"/>
+    </padding>
+
+    <children>
+        <Label fx:id="titleLabel"
+               text="Сервис: "
+               wrapText="true"
+               maxWidth="1.7976931348623157E308"
+               style="-fx-text-fill: #1c1c1c; -fx-font-weight: bold;"/>
+
+        <Label fx:id="statusLabel"
+               text="Текущий статус: "
+               wrapText="true"
+               maxWidth="1.7976931348623157E308"
+               style="-fx-text-fill: #1c1c1c;"/>
+
+        <HBox fx:id="switchBox"
+              spacing="15.0"
+              alignment="CENTER_LEFT"
+              maxWidth="1.7976931348623157E308"
+              visible="false"
+              managed="false">
+            <children>
+                <Label fx:id="switchLabel"
+                       text="Включите, если админ взял сервис на контроль:"
+                       wrapText="true"
+                       maxWidth="1.7976931348623157E308"
+                       HBox.hgrow="ALWAYS"
+                       style="-fx-text-fill: #1c1c1c;"/>
+                <ToggleButton fx:id="statusSwitch"
+                              text="ВЫКЛ"/>
+            </children>
+        </HBox>
+
+        <Region VBox.vgrow="ALWAYS"/>
+
+        <VBox fx:id="buttonsBox"
+              spacing="15.0"
+              alignment="CENTER"
+              maxWidth="1.7976931348623157E308">
+            <children>
+                <Button fx:id="diagnosticButton"
+                        text="Провести диагностику"
+                        maxWidth="1.7976931348623157E308"/>
+                <HBox spacing="20.0"
+                      alignment="CENTER"
+                      maxWidth="1.7976931348623157E308">
+                    <children>
+                        <Button fx:id="deleteButton"
+                                text="Удалить"
+                                maxWidth="1.7976931348623157E308"
+                                HBox.hgrow="ALWAYS"/>
+                        <Button fx:id="closeButton"
+                                text="Закрыть"
+                                maxWidth="1.7976931348623157E308"
+                                HBox.hgrow="ALWAYS"/>
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</VBox>

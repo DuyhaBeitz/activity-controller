@@ -283,204 +283,25 @@ public class MapController
         Button detailsButton = new Button("Подробнее");
         double buttonFontSize = LayoutScale.scaled(12);
         detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: " + buttonFontSize + ";"));
-        detailsButton.setOnAction(e -> openServerDetailsModal(server, serverRow));
+        detailsButton.setOnAction(e -> {
+            ServerDetailsController controller = new ServerDetailsController();
+            controller.setDependencies(server, database, this);
+            controller.show();
+        });
 
         serverRow.getChildren().addAll(statusIndicator, nameLabel, detailsButton);
         serversContainer.getChildren().add(serverRow);
     }
 
-    private String setStatusText(String status)
+    public void onServerDeleted(int id)
     {
-        String statusText = "";
-        switch (status)
+        if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
-            case "OK":
-                statusText = "Все работает исправно";
-                break;
-            case "ERROR":
-                statusText = "Сервис работает некорректно. Выполните диагностику и обратитесь к системному администратору";
-                break;
-            case "CONTROL":
-                statusText = "У сервиса замечены проблемы. Уже ведутся работы по их исправлению";
-                break;
-            case "WARNING":
-                statusText = "Время ответа сервиса растет. Рекомендуется провести диагностику и следить за его дальнейшей работой";
-                break;
-            default:
-                statusText = String.format("Неизвестный статус: {0}", status);
-                System.out.println(String.format("Получен неизвестный статус: {0}", status));
-                break;
+            webEngine.executeScript(String.format(
+                "if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }",
+            id, id, id));
         }
-
-        return statusText;
-    }
-
-    private void openServerDetailsModal(ServerResult server, HBox serverRowInPanel)
-    {
-        Stage infoStage = new Stage();
-        infoStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
-        infoStage.setTitle("Информация о сервисе");
-        infoStage.setResizable(false);
-
-        double targetWidth = LayoutScale.scaled(420.0);
-        double targetHeight = LayoutScale.scaled(540.0);
-
-        double textSize = LayoutScale.scaled(16.0);
-        double titleSize = LayoutScale.scaled(24.0);
-        double padding = LayoutScale.scaled(15);
-
-        VBox layout = new VBox(LayoutScale.scaled(15));
-        layout.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: white;", padding));
-        layout.setAlignment(javafx.geometry.Pos.TOP_LEFT);
-
-        Label titleLabel = new Label("Сервис: " + server.name());
-        titleLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx; -fx-font-weight: bold;", titleSize));
-        titleLabel.setWrapText(true);
-        titleLabel.setMaxWidth(Double.MAX_VALUE);
-
-        String statusText = setStatusText(server.status().name());
-
-        Label statusLabel = new Label("Текущий статус: " + statusText);
-        statusLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
-        statusLabel.setWrapText(true);
-        statusLabel.setMaxWidth(Double.MAX_VALUE);
-
-        // Label adminLabel = new Label();
-        // можно будет добавить несколько контактов (почта, соцсети)
-
-        layout.getChildren().addAll(titleLabel, statusLabel);
-
-        // Вспомогательный контейнер для удобного перезаписывания
-        final ServerResult[] currentServerHolder = { server };
-
-        if (currentServerHolder[0].status() == ServerStatus.ERROR ||
-            currentServerHolder[0].status() == ServerStatus.CONTROL)
-        {
-            HBox switchBox = new HBox(LayoutScale.scaled(15));
-            switchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-            switchBox.setMaxWidth(Double.MAX_VALUE);
-
-            Label switchLabel = new Label("Включите, если админ взял сервис на контроль:");
-            switchLabel.setStyle(String.format("-fx-text-fill: white; -fx-font-size: %.0fpx;", textSize));
-            switchLabel.setWrapText(true);
-
-            HBox.setHgrow(switchLabel, javafx.scene.layout.Priority.ALWAYS);
-            switchLabel.setMaxWidth(Double.MAX_VALUE);
-
-            ToggleButton statusSwitch = new ToggleButton("ВЫКЛ");
-            statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white;-fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
-            statusSwitch.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
-
-            if (currentServerHolder[0].status() == ServerStatus.CONTROL)
-            {
-                statusSwitch.setSelected(true);
-                statusSwitch.setText("ВКЛ");
-                statusSwitch.setStyle(String.format("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
-            }
-
-            statusSwitch.setOnAction(e -> {
-                try
-                {
-                    ServerStatus targetStatus = statusSwitch.isSelected() ?
-                                ServerStatus.CONTROL : ServerStatus.ERROR;
-
-                    // Обновляем статус в базе данных
-
-                    currentServerHolder[0] = new Database.ServerResult(
-                        currentServerHolder[0].id(), 
-                        currentServerHolder[0].name(), 
-                        currentServerHolder[0].latitude(), 
-                        currentServerHolder[0].longitude(), 
-                        targetStatus,
-                        currentServerHolder[0].address()
-                    );
-
-                    statusLabel.setText("Текущий статус: " + setStatusText(targetStatus.name()));
-                    if (statusSwitch.isSelected()) {
-                        statusSwitch.setText("ВКЛ");
-                        statusSwitch.setStyle(String.format("-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
-                    } else {
-                        statusSwitch.setText("ВЫКЛ");
-                        statusSwitch.setStyle(String.format("-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;", textSize));
-                    }
-
-                    if (serverRowInPanel != null && !serverRowInPanel.getChildren().isEmpty() && serverRowInPanel.getChildren().get(0) instanceof javafx.scene.shape.Circle)
-                    {
-                        javafx.scene.shape.Circle indicator = (javafx.scene.shape.Circle) serverRowInPanel.getChildren().get(0);
-                        String indColor = (targetStatus == ServerStatus.CONTROL) ? "#e67e22" : "#e74c3c";
-                        indicator.setStyle("-fx-fill: " + indColor + "; -fx-stroke: white; -fx-stroke-width: 1;");
-                    }
-
-                    javafx.application.Platform.runLater(() -> {
-                        webEngine.executeScript(String.format("updateServiceMarkerStatus(%d, '%s')", currentServerHolder[0].id(), targetStatus.name()));
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Viewer.showErrorAlert("Ошибка изменения статуса", ex.getMessage());
-                    statusSwitch.setSelected(!statusSwitch.isSelected());
-                }
-            });
-
-            switchBox.getChildren().addAll(switchLabel, statusSwitch);
-            layout.getChildren().add(switchBox);
-        }
-
-        Region spacer = new Region();
-        VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
-
-        VBox buttonsBox = new VBox(LayoutScale.scaled(15));
-        buttonsBox.setAlignment(javafx.geometry.Pos.CENTER);
-        buttonsBox.setMaxWidth(Double.MAX_VALUE);
-
-        String baseBtnStyle = "-fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: %.0fpx;";
-        String blueStyle = String.format("-fx-background-color: #3652a1; " + baseBtnStyle, textSize);
-        String darkBlueStyle = String.format("-fx-background-color: #232853; " + baseBtnStyle, textSize);
-        String redStyle = String.format("-fx-background-color: #e74c3c; " + baseBtnStyle, textSize);
-
-        Button diagnosticButton = new Button("Провести диагностику");
-        diagnosticButton.setStyle(blueStyle);
-        diagnosticButton.setMaxWidth(Double.MAX_VALUE);
-        // diagnosticButton.setOnAction();  получение подробной инфы о сервисе
-
-        HBox hButtonsBox = new HBox(LayoutScale.scaled(20));
-        hButtonsBox.setMaxWidth(Double.MAX_VALUE);
-        hButtonsBox.setAlignment(javafx.geometry.Pos.CENTER);
-
-        Button closeButton = new Button("Закрыть");
-        closeButton.setMaxWidth(Double.MAX_VALUE);
-        closeButton.setStyle(darkBlueStyle);
-        closeButton.setOnAction(e -> infoStage.close());
-
-        Button deleteButton = new Button("Удалить");
-        deleteButton.setStyle(redStyle);
-        deleteButton.setMaxWidth(Double.MAX_VALUE);
-        deleteButton.setOnAction(e -> {
-            try
-            {
-                database.removeServer(server.id());
-
-                serversContainer.getChildren().remove(serverRowInPanel);
-                javafx.application.Platform.runLater(() -> {
-                    webEngine.executeScript(String.format("if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }", currentServerHolder[0].id(), currentServerHolder[0].id(), currentServerHolder[0].id()));
-                });
-                infoStage.close();
-            }
-            catch (Exception ex)
-            {
-                Viewer.showErrorAlert("Ошибка удаления", ex.getMessage());
-            }
-        });
-
-        hButtonsBox.getChildren().addAll(deleteButton, closeButton);
-        HBox.setHgrow(deleteButton, javafx.scene.layout.Priority.ALWAYS);
-        HBox.setHgrow(closeButton, javafx.scene.layout.Priority.ALWAYS);
-
-        buttonsBox.getChildren().addAll(diagnosticButton, hButtonsBox);
-        layout.getChildren().addAll(spacer, buttonsBox);
-
-        infoStage.setScene(new Scene(layout, targetWidth, targetHeight));
-        infoStage.showAndWait();
+        Platform.runLater(this::refreshAllUiComponents);
     }
 
     public void startAutoMonitoring()
