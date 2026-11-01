@@ -25,6 +25,8 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -52,6 +54,8 @@ public class MapController
 
     private AddServiceController activeDialogController;
 
+    private PauseTransition resizeDebounce;
+
     public WebEngine getWebEngine()
     {
         return this.webEngine;
@@ -69,6 +73,15 @@ public class MapController
         catch (SQLException e)
         {
             System.err.println("Не удалось подключиться к базе данных: " + e.getMessage());
+            Viewer.showErrorAlert("Ошибка подключения", 
+                "Не удалось подключиться к базе данных:\n" + e.getMessage() +
+                "\n\nПриложение будет закрыто."
+            );
+            Platform.runLater(() -> {
+                Stage stage = (Stage) mapWebView.getScene().getWindow();
+                stage.close();
+            });
+            return;
         }
 
         webEngine = mapWebView.getEngine();
@@ -97,25 +110,16 @@ public class MapController
             }
         });
 
-        // Слушатель размера для карты (ширина)
-        mapWebView.widthProperty().addListener((obs, oldW, newW) -> {
-            if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED)
+        resizeDebounce = new PauseTransition(Duration.millis(150));
+        resizeDebounce.setOnFinished(e -> {
+            if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
             {
-                javafx.application.Platform.runLater(() -> {
-                    webEngine.executeScript("if(typeof map !== 'undefined') { map.invalidateSize(); }");
-                });
+                webEngine.executeScript("if(typeof map !== 'undefined') { map.invalidateSize(); }");
             }
         });
 
-        // Слушатель размера для карты (высота)
-        mapWebView.heightProperty().addListener((obs, oldH, newH) -> {
-            if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED)
-            {
-                javafx.application.Platform.runLater(() -> {
-                    webEngine.executeScript("if(typeof map !== 'undefined') { map.invalidateSize(); }");
-                });
-            }
-        });
+        mapWebView.widthProperty().addListener((obs, oldW, newW) -> resizeDebounce.playFromStart());
+        mapWebView.heightProperty().addListener((obs, oldH, newH) -> resizeDebounce.playFromStart());
 
         if (mapWebView != null)
         {
@@ -137,7 +141,16 @@ public class MapController
 
     private void loadServersFromDatabase()
     {
-        if (database == null) return;
+        if (database == null)
+        {
+            // Явно сообщаем в UI, а не молчим
+            javafx.application.Platform.runLater(() -> {
+                mainLabel.setText("НЕТ ПОДКЛЮЧЕНИЯ К БД");
+                Double fontsize = LayoutScale.scaled(18);
+                mainLabel.setStyle("-fx-font-size:"+fontsize+"; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+            });
+            return;
+        }
 
         javafx.application.Platform.runLater(() -> serversContainer.getChildren().clear());
 
@@ -150,7 +163,12 @@ public class MapController
             {
                 String jsCommand = String.format(java.util.Locale.US,
                     "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
-                    server.id(), server.latitude(), server.longitude(), server.name().replace("'", "\\'"), server.status().name(), server.address()
+                    server.id(),
+                    server.latitude(),
+                    server.longitude(),
+                    escapeJs(server.name()),
+                    escapeJs(server.status().name()),
+                    escapeJs(server.address())
                 );
 
                 javafx.application.Platform.runLater(() -> {
@@ -212,7 +230,12 @@ public class MapController
         {
             String jsCommand = String.format(java.util.Locale.US,
             "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
-            id, lat, lng, name.replace("'", "\\'"), status, address);
+            id,
+            lat,
+            lng,
+            escapeJs(name),
+            escapeJs(status),
+            escapeJs(address));
 
             webEngine.executeScript(jsCommand);
         }
@@ -284,7 +307,8 @@ public class MapController
                 statusText = "Время ответа сервиса растет. Рекомендуется провести диагностику и следить за его дальнейшей работой";
                 break;
             default:
-                Viewer.showErrorAlert("Ошибка", "Получен некорректный статус");
+                statusText = String.format("Неизвестный статус: {0}", status);
+                System.out.println(String.format("Получен неизвестный статус: {0}", status));
                 break;
         }
 
@@ -461,6 +485,12 @@ public class MapController
 
     public void startAutoMonitoring()
     {
+        if (database == null)
+        {
+            System.out.println("Мониторинг не запущен. База данных не подключена");
+            return;
+        }
+
         if (monitoringScheduler != null && !monitoringScheduler.isShutdown())
         {
             monitoringScheduler.shutdown();
@@ -522,7 +552,8 @@ public class MapController
             {
                 webEngine.executeScript(String.format(
                 "if (typeof updateServiceMarkerStatus === 'function') { updateServiceMarkerStatus(%d, '%s'); }", 
-                server.id(), server.status().name()
+                server.id(),
+                escapeJs(server.status().name())
                 ));
 
                 addServerToSidePanel(server);
@@ -538,6 +569,11 @@ public class MapController
     
     public void shutdownMonitoring()
     {
+        if (resizeDebounce != null)
+        {
+            resizeDebounce.stop();
+        }
+
         if (monitoringScheduler != null && !monitoringScheduler.isShutdown())
         {
             monitoringScheduler.shutdown();
@@ -562,5 +598,16 @@ public class MapController
         {
             monitoringScheduler.shutdownNow();
         }
+    }
+
+    private static String escapeJs(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\")
+                .replace("'",  "\\'")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n")
+                .replace("\r", "\\r")
+                .replace("\u2028", "\\u2028")
+                .replace("\u2029", "\\u2029");
     }
 }
