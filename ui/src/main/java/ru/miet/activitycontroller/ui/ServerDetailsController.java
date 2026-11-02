@@ -107,8 +107,23 @@ public class ServerDetailsController
     private void onSwitchToggled()
     {
         ServerStatus target = statusSwitch.isSelected() ? ServerStatus.CONTROL : ServerStatus.ERROR;
-        statusLabel.setText("Текущий статус: " + statusText(server.status()));
-        applySwitchStyle(target);
+
+        try
+        {
+            database.updateServerStatus(server.id(), target);
+
+            statusLabel.setText("Текущий статус: " + statusText(server.status()));
+            applySwitchStyle(target);
+
+            mapController.updateMarkerStatusOnly(server.id(), target);
+        }
+        catch(Exception e)
+        {
+            Viewer.showErrorAlert("Ошибка изменения статуса", e.getMessage());
+            statusSwitch.setSelected(server.status() == ServerStatus.CONTROL);
+            statusLabel.setText("Текущий статус: " + statusText(server.status()));
+            applySwitchStyle(server.status()); 
+        }
     }
 
     private void onDelete()

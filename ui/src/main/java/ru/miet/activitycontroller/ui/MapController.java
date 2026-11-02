@@ -323,11 +323,10 @@ public class MapController
             return thread;
         });
 
-        monitoringScheduler.scheduleAtFixedRate(() -> {
+        monitoringScheduler.scheduleWithFixedDelay(() -> {
             try
             {
                 Service.update(this.database);
-
                 Platform.runLater(this::refreshAllUiComponents);
             }
             catch(Exception e)
@@ -335,6 +334,16 @@ public class MapController
                 System.err.println("Ошибка при фоновом опросе серверов: " + e.getMessage());
             }
         }, 0, 5, TimeUnit.SECONDS);
+    }
+
+    public void updateMarkerStatusOnly(int id, ServerStatus status)
+    {
+        if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED) {
+            webEngine.executeScript(String.format(
+                "if (typeof updateServiceMarkerStatus === 'function') { updateServiceMarkerStatus(%d, '%s'); }", 
+                id, status.name()
+            ));
+        }
     }
 
     private void updateMainUiStyles()
