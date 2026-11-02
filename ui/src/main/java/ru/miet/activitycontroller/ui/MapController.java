@@ -154,7 +154,7 @@ public class MapController
             javafx.application.Platform.runLater(() -> {
                 mainLabel.setText("НЕТ ПОДКЛЮЧЕНИЯ К БД");
                 Double fontsize = LayoutScale.scaled(18);
-                mainLabel.setStyle("-fx-font-size:"+fontsize+"; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                mainLabel.setStyle("-fx-font-size:"+fontsize+"px; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
             });
             return;
         }
@@ -179,6 +179,7 @@ public class MapController
                 javafx.application.Platform.runLater(() -> {
                     webEngine.executeScript(jsCommand);
                     createServerRow(server);
+                    serversById.put(server.id(), server);
                 });
             }
         }
@@ -249,6 +250,7 @@ public class MapController
             {
                 ServerResult server = new ServerResult(id, name, lat, lng, ServerStatus.valueOf(status), address);
                 createServerRow(server);
+                serversById.put(id, server);
             }
             catch(Exception e)
             {
@@ -328,7 +330,20 @@ public class MapController
                 "if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }",
             id, id, id));
         }
-        Platform.runLater(this::refreshAllUiComponents);
+        
+        ServerRowView rowView = serverRowsById.remove(id);
+        if (rowView != null)
+        {
+            serversContainer.getChildren().remove(rowView.container);
+        }
+
+        serversById.remove(id);
+
+        if (openDetailsController != null && openDetailsController.getServerId() == id)
+        {
+            openDetailsController.close();
+            openDetailsController = null;
+        }
     }
 
     public void startAutoMonitoring()

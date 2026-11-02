@@ -15,8 +15,11 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import ru.miet.activitycontroller.core.Database;
+import ru.miet.activitycontroller.core.Pinger;
 import ru.miet.activitycontroller.core.Database.ServerResult;
 import ru.miet.activitycontroller.core.ServerStatus;
+import javafx.scene.layout.Region;
+import javafx.concurrent.Task;
 
 public class ServerDetailsController
 {
@@ -54,6 +57,7 @@ public class ServerDetailsController
         closeButton.setOnAction(e -> close());
         deleteButton.setOnAction(e -> onDelete());
         statusSwitch.setOnAction(e -> onSwitchToggled());
+        diagnosticButton.setOnAction(e -> onDiagnosticClick());
     }
 
     public void show()
@@ -213,5 +217,80 @@ public class ServerDetailsController
             case CONTROL -> "У сервиса замечены проблемы. Уже ведутся работы по их исправлению";
             case WARNING -> "Время ответа сервиса растет. Рекомендуется провести диагностику и следить за его дальнейшей работой";
         };
+    }
+
+    private void onDiagnosticClick()
+    {
+        diagnosticButton.setDisable(true);
+        diagnosticButton.setText("Диагностика...");
+
+        Task<Pinger.PingResult> task = new Task<>()
+        {
+            @Override
+            protected Pinger.PingResult call()
+            {
+                return Pinger.runPing(server.address());
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            diagnosticButton.setDisable(false);
+            diagnosticButton.setText("Провести диагностику");
+
+            Pinger.PingResult result = task.getValue();
+            
+            if (result != null)
+            {
+                showPingResultWindow(result.toString());
+            }
+            else
+            {
+                Viewer.showErrorAlert("Ошибка", "Не удается провести диагностику (нет ответа)");
+            }
+        });
+
+        task.setOnFailed(e -> {
+            diagnosticButton.setDisable(false);
+            diagnosticButton.setText("Провести диагностику");
+            Viewer.showErrorAlert("Ошибка", "Ошибка при выполнении диагностики");
+        });
+
+        // 5. Запускаем поток
+        new Thread(task).start();
+    }
+
+    private void showPingResultWindow(String pingText)
+    {
+        Stage diagnosticStage = new Stage();
+        diagnosticStage.initModality(javafx.stage.Modality.APPLICATION_MODAL);
+        diagnosticStage.setTitle("Результат пинга");
+        diagnosticStage.setResizable(false);
+
+        double targetWidth = LayoutScale.scaled(420.0);
+        double targetHeight = LayoutScale.scaled(540.0);
+
+        double textSize = LayoutScale.scaled(16);
+        double padding = LayoutScale.scaled(15);
+
+        VBox layout = new VBox(LayoutScale.scaled(15));
+        layout.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: white;", padding));
+        layout.setAlignment(javafx.geometry.Pos.TOP_LEFT);
+
+        Label pingLabel = new Label(pingText);
+        pingLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-family: 'Consolas', monospace; -fx-font-size: %.0fpx;", textSize));
+        pingLabel.setWrapText(true);
+        pingLabel.setMaxWidth(Double.MAX_VALUE);
+
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
+
+        Button goBackButton = new Button("Ок");
+        goBackButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: %.0fpx;", textSize));
+        goBackButton.setMaxWidth(Double.MAX_VALUE);
+        goBackButton.setOnAction(e -> diagnosticStage.close());
+
+        layout.getChildren().addAll(pingLabel, spacer, goBackButton);
+        diagnosticStage.setScene(new Scene(layout, targetWidth, targetHeight));
+        diagnosticStage.showAndWait();
     }
 }
