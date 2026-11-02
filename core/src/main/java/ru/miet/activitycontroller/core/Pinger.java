@@ -61,11 +61,21 @@ public class Pinger {
      */
     public static PingResult runPing(String host) {
         try {
+
+            String os = System.getProperty("os.name").toLowerCase();
+
+            String crl = "curl";
+            String devnul = "/dev/null";
+            if (os.contains("win")) {
+                crl = "curl.exe";
+                devnul = "NUL";
+            }
+
             Process process = new ProcessBuilder(
-                "curl",
+                    crl,
                 "-sS",
                 "-L",
-                "-o", "/dev/null",
+                "-o", devnul,
                 "-w",
                 "%{http_code}\t" +
                 "%{time_namelookup}\t" +
