@@ -6,58 +6,71 @@
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ScrollPane?>
 
-<VBox spacing="10.0" style="-fx-background-color: #f4f6f7;"
-      xmlns="http://javafx.com" 
-      xmlns:fx="http://javafx.com"
-      fx:controller="ru.miet.activitycontroller.ui.AddServiceController">
+<ScrollPane fitToWidth="true"
+            style="-fx-background-color: transparent; -fx-background: #f4f6f7; -fx-border-color: transparent;"
+            vbarPolicy="NEVER"
+            xmlns="http://javafx.com" 
+            xmlns:fx="http://javafx.com"
+            fx:controller="ru.miet.activitycontroller.ui.AddServiceController">
 
-    <padding>
-        <Insets bottom="24.0" left="24.0" right="24.0" top="24.0"/>
-    </padding>
-    
-    <children>
-        <Label text="Введите название сервиса: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
-        <TextField fx:id="nameField" promptText="Введите название"
-            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
+    <content>
+        <VBox spacing="10.0" style="-fx-background-color: #f4f6f7;">
+            <padding>
+                <Insets bottom="24.0" left="24.0" right="24.0" top="24.0"/>
+            </padding>
+            
+            <children>
 
-
-        <Label text="Введите широту расположения сервиса: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
-        <TextField fx:id="latField" promptText="Введите широту"
-            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
-
-
-        <Label text="Введите долготу расположения сервиса: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
-        <TextField fx:id="lngField" promptText="Введите долготу"
-            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
+                <Label text="Введите название сервиса: "
+                    wrapText="true"
+                    style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+                <TextField fx:id="nameField" promptText="Введите название"
+                    style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
 
-        <Button
-            text="Выбрать точку на карте"
-            onAction="#onSelectOnMapClick"
-            maxWidth="1.7976931348623157E308"
-            style="-fx-background-color: #3652a1; -fx-text-fill: white; -fx-font-weight: bold;
-            -fx-font-size: 1.2em; -fx-padding: 8; -fx-cursor: hand;"/>
+                <Label text="Введите широту расположения сервиса: "
+                    wrapText="true"
+                    style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+                <TextField fx:id="latField" promptText="Введите широту"
+                    style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
-        <Label text="Введите адрес сервера: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
-        <TextField fx:id="addressField" promptText="Введите адрес"
-            style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
-        <Label text="Добавьте контакты для связи: "
-            style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+                <Label text="Введите долготу расположения сервиса: "
+                    wrapText="true"
+                    style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+                <TextField fx:id="lngField" promptText="Введите долготу"
+                    style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
-        <VBox VBox.vgrow="ALWAYS" />
 
-        <Button
-            fx:id="safeButton"
-            onAction="#onSaveClick"
-            text="Добавить"
-            maxWidth="1.7976931348623157E308"
-            style="-fx-background-color: #232853; -fx-text-fill: white; -fx-font-weight: bold;
-            -fx-cursor: hand; -fx-font-size: 1.4em; -fx-padding: 10; -fx-background-radius: 6;"/>
-    </children>
-</VBox>
+                <Button
+                    text="Выбрать точку на карте"
+                    onAction="#onSelectOnMapClick"
+                    maxWidth="1.7976931348623157E308"
+                    style="-fx-background-color: #3652a1; -fx-text-fill: white; -fx-font-weight: bold;
+                    -fx-font-size: 1.2em; -fx-padding: 8; -fx-cursor: hand;"/>
+
+                <Label text="Введите адрес сервера: "
+                    wrapText="true"
+                    style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+                <TextField fx:id="addressField" promptText="Введите адрес"
+                    style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
+
+                <Label text="Добавьте контакты для связи: "
+                    wrapText="true"
+                    style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+
+                <VBox minHeight = "15.0" />
+
+                <Button
+                    fx:id="safeButton"
+                    onAction="#onSaveClick"
+                    text="Добавить"
+                    maxWidth="1.7976931348623157E308"
+                    style="-fx-background-color: #232853; -fx-text-fill: white; -fx-font-weight: bold;
+                    -fx-cursor: hand; -fx-font-size: 1.4em; -fx-padding: 10; -fx-background-radius: 6;"/>
+            </children>
+        </VBox>
+    </content>
+</ScrollPane>

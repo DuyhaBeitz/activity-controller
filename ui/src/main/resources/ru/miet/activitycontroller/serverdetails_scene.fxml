@@ -20,6 +20,7 @@
     </padding>
 
     <children>
+
         <Label fx:id="titleLabel"
                text="Сервис: "
                wrapText="true"

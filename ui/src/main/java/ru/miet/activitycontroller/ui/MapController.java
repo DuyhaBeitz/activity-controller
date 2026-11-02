@@ -23,13 +23,16 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Circle;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MapController
 {
@@ -53,6 +56,10 @@ public class MapController
     private Database database;
 
     private AddServiceController activeDialogController;
+    private ServerDetailsController openDetailsController;
+
+    private final Map<Integer, ServerRowView> serverRowsById = new HashMap<>();
+    private final Map<Integer, ServerResult> serversById = new HashMap<>();
 
     private PauseTransition resizeDebounce;
 
@@ -152,8 +159,6 @@ public class MapController
             return;
         }
 
-        javafx.application.Platform.runLater(() -> serversContainer.getChildren().clear());
-
         try
         {
             List<Database.ServerResult> servers = database.getServers();
@@ -173,9 +178,8 @@ public class MapController
 
                 javafx.application.Platform.runLater(() -> {
                     webEngine.executeScript(jsCommand);
+                    createServerRow(server);
                 });
-
-                javafx.application.Platform.runLater(() -> addServerToSidePanel(server));
             }
         }
         catch (SQLException e)
@@ -201,8 +205,8 @@ public class MapController
             modalStage.setTitle("Добавление нового сервиса");
             modalStage.setResizable(false);
 
-            double dynamicWidth = LayoutScale.scaled(400.0);
-            double dynamicHeight = LayoutScale.scaled(600.0);
+            double dynamicWidth = LayoutScale.scaled(500.0);
+            double dynamicHeight = LayoutScale.scaled(620.0);
 
             modalStage.setScene(new Scene(root, dynamicWidth, dynamicHeight));
             modalStage.showAndWait();
@@ -244,7 +248,7 @@ public class MapController
             try
             {
                 ServerResult server = new ServerResult(id, name, lat, lng, ServerStatus.valueOf(status), address);
-                addServerToSidePanel(server);
+                createServerRow(server);
             }
             catch(Exception e)
             {
@@ -253,7 +257,7 @@ public class MapController
         });
     }
 
-    private void addServerToSidePanel(Database.ServerResult server)
+    private void createServerRow(ServerResult server)
     {
         HBox serverRow = new HBox(8);
         serverRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
@@ -263,16 +267,7 @@ public class MapController
 
         int radius = (int) LayoutScale.scaled(6);
         javafx.scene.shape.Circle statusIndicator = new javafx.scene.shape.Circle(radius);
-        String color;
-        switch (server.status())
-        {
-            case OK -> color = "#2ecc71";
-            case WARNING -> color = "#f1c40f";
-            case ERROR -> color = "#e74c3c";
-            case CONTROL -> color = "#e67e22";
-            default -> color = "#95a5a6";
-        }
-        statusIndicator.setStyle("-fx-fill: " + color + "; -fx-stroke: white; -fx-stroke-width: 1;");
+        updateCircleColor(statusIndicator, server.status());
 
         Label nameLabel = new Label(server.name());
         double labelFontSize = LayoutScale.scaled(14);
@@ -284,13 +279,45 @@ public class MapController
         double buttonFontSize = LayoutScale.scaled(12);
         detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: " + buttonFontSize + ";"));
         detailsButton.setOnAction(e -> {
-            ServerDetailsController controller = new ServerDetailsController();
-            controller.setDependencies(server, database, this);
-            controller.show();
+            openDetailsController = new ServerDetailsController();
+            openDetailsController.setDependencies(server, database, this);
+            openDetailsController.show();
+            openDetailsController = null;
         });
 
         serverRow.getChildren().addAll(statusIndicator, nameLabel, detailsButton);
         serversContainer.getChildren().add(serverRow);
+
+        ServerRowView view = new ServerRowView(serverRow, statusIndicator, nameLabel, detailsButton, server.status());
+        serverRowsById.put(server.id(), view);
+    }
+
+    private void updateCircleColor(Circle circle, ServerStatus status)
+    {
+        String color = switch (status)
+        {
+            case OK -> "#2ecc71";
+            case WARNING -> "#f1c40f";
+            case ERROR -> "#e74c3c";
+            case CONTROL -> "#e67e22";
+            default -> "#95a5a6";
+        };
+        circle.setStyle("-fx-fill: " + color + "; -fx-stroke: white; -fx-stroke-width: 1;");
+    }
+
+    public void openDiagnostic(int id)
+    {
+        ServerResult server = serversById.get(id);
+        if (server == null)
+        {
+            Viewer.showErrorAlert("Ошибка", "Не удается открыть информацию о сервисе");
+            return;
+        }
+        
+        openDetailsController = new ServerDetailsController();
+        openDetailsController.setDependencies(server, database, this);
+        openDetailsController.show();
+        openDetailsController = null;
     }
 
     public void onServerDeleted(int id)
@@ -336,14 +363,27 @@ public class MapController
         }, 0, 5, TimeUnit.SECONDS);
     }
 
-    public void updateMarkerStatusOnly(int id, ServerStatus status)
+    public void applyStatusToUi(int id, ServerStatus status)
     {
-        if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED) {
+        if (webEngine.getLoadWorker().getState() == javafx.concurrent.Worker.State.SUCCEEDED)
+        {
             webEngine.executeScript(String.format(
                 "if (typeof updateServiceMarkerStatus === 'function') { updateServiceMarkerStatus(%d, '%s'); }", 
                 id, status.name()
             ));
         }
+
+        ServerRowView rowView = serverRowsById.get(id);
+        if (rowView != null && rowView.currentStatus != status)
+        {
+            updateCircleColor(rowView.statusIndicator, status);
+            rowView.currentStatus = status;
+        }
+    }
+
+    public void updateStatusInUiWithRunLater(int id, ServerStatus status)
+    {
+        Platform.runLater(() -> applyStatusToUi(id, status));
     }
 
     private void updateMainUiStyles()
@@ -368,25 +408,59 @@ public class MapController
         try
         {
             List<ServerResult> updatedServers = database.getServers();
+            Map<Integer, ServerResult> freshById = new HashMap();
+            for (ServerResult s : updatedServers) freshById.put(s.id(), s);
 
-            if (serversContainer != null)
+            serverRowsById.entrySet().removeIf(entry -> {
+                int id = entry.getKey();
+                if (!freshById.containsKey(id))
+                {
+                    // Удаляем визуал
+                    serversContainer.getChildren().remove(entry.getValue().container);
+                    if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
+                    {
+                        webEngine.executeScript(String.format("if(markersMap[%d]) { markerClusterGroup.removeLayer(markersMap[%d]); delete markersMap[%d]; }", id, id, id));
+                    }
+                    return true;
+                }
+                return false;
+            });
+
+            for (ServerResult fresh : updatedServers)
             {
-                serversContainer.getChildren().clear();
+                ServerRowView rowView = serverRowsById.get(fresh.id());
+
+                if (rowView == null)
+                {
+                    // Если в бд появляется новый сервер извне - добавляем на карту
+                    createServerRow(fresh);
+                    if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
+                    {
+                        String js = String.format(java.util.Locale.US, "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
+                            fresh.id(), fresh.latitude(), fresh.longitude(), escapeJs(fresh.name()), fresh.status().name(), escapeJs(fresh.address()));
+                        webEngine.executeScript(js);
+                    }
+                }
+                else if (rowView.currentStatus != fresh.status())
+                {
+                    applyStatusToUi(fresh.id(), fresh.status());
+                }
             }
 
-            serversContainer.setSpacing(LayoutScale.scaled(10.0));
+            serversById.clear();
+            serversById.putAll(freshById);
 
-            updateMainUiStyles();
-
-            for (ServerResult server : updatedServers)
+            if (openDetailsController != null)
             {
-                webEngine.executeScript(String.format(
-                "if (typeof updateServiceMarkerStatus === 'function') { updateServiceMarkerStatus(%d, '%s'); }", 
-                server.id(),
-                escapeJs(server.status().name())
-                ));
-
-                addServerToSidePanel(server);
+                ServerResult currentForModal = freshById.get(openDetailsController.getServerId());
+                if (currentForModal != null)
+                {
+                    openDetailsController.update(currentForModal);
+                }
+                else
+                {
+                    openDetailsController.close();
+                }
             }
 
             System.out.println("Информация о серверах обновлена!");
@@ -430,7 +504,8 @@ public class MapController
         }
     }
 
-    private static String escapeJs(String s) {
+    private static String escapeJs(String s)
+    {
         if (s == null) return "";
         return s.replace("\\", "\\\\")
                 .replace("'",  "\\'")

@@ -1,5 +1,6 @@
 package ru.miet.activitycontroller.ui;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
@@ -95,8 +96,24 @@ public class ServerDetailsController
             Viewer.showErrorAlert("Ошибка", "Не удалось открыть информацию о сервисе:\n" + e.getMessage());
         }
     }
+
+    public void update(ServerResult fresh)
+    {
+        if (fresh.status() != this.server.status())
+        {
+            this.server = fresh;
+            statusLabel.setText("Текущий статус: " + statusText(fresh.status()));
+
+            if (statusSwitch != null && statusSwitch.isVisible())
+            {
+                statusSwitch.setSelected(fresh.status() == ServerStatus.CONTROL);
+                applySwitchStyle(fresh.status() == ServerStatus.CONTROL ? ServerStatus.CONTROL : ServerStatus.ERROR);
+            }
+
+        }
+    }
         
-    private void close()
+    public void close()
     {
         if (stage != null)
         {
@@ -111,11 +128,10 @@ public class ServerDetailsController
         try
         {
             database.updateServerStatus(server.id(), target);
-
+            this.server = new ServerResult(server.id(), server.name(), server.latitude(), server.longitude(), target, server.address());
             statusLabel.setText("Текущий статус: " + statusText(server.status()));
             applySwitchStyle(target);
-
-            mapController.updateMarkerStatusOnly(server.id(), target);
+            mapController.applyStatusToUi(server.id(), target);
         }
         catch(Exception e)
         {
