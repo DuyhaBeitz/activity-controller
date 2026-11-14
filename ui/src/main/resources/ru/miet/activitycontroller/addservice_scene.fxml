@@ -5,6 +5,7 @@
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.TextArea?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.control.ScrollPane?>
 
@@ -57,9 +58,14 @@
                 <TextField fx:id="addressField" promptText="Введите адрес"
                     style="-fx-font-size: 1.3em; -fx-padding: 8;" maxWidth="1.7976931348623157E308"/>
 
-                <Label text="Добавьте контакты для связи: "
+                <Label text="Добавить заметку: "
                     wrapText="true"
                     style="-fx-font-size: 1.4em; -fx-font-weight: bold; -fx-text-fill: #1c1c1c;" />
+                <TextArea fx:id="notesArea" 
+                    promptText="Введите текст..." 
+                    wrapText="true" 
+                    prefRowCount="4" 
+                    style="-fx-font-size: 1.2em;" />
 
                 <VBox minHeight = "15.0" />
 

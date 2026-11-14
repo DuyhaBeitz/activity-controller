@@ -167,13 +167,14 @@ public class MapController
             for (Database.ServerResult server : servers)
             {
                 String jsCommand = String.format(java.util.Locale.US,
-                    "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
+                    "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s', '%s')",
                     server.id(),
                     server.latitude(),
                     server.longitude(),
                     escapeJs(server.name()),
                     escapeJs(server.status().name()),
-                    escapeJs(server.address())
+                    escapeJs(server.address()),
+                    escapeJs(server.notes())
                 );
 
                 javafx.application.Platform.runLater(() -> {
@@ -229,18 +230,19 @@ public class MapController
         });
     }
 
-    public void addNewMarkerDirectly(int id, float lat, float lng, String name, String status, String address)
+    public void addNewMarkerDirectly(int id, float lat, float lng, String name, String status, String address, String notes)
     {
         if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
         {
             String jsCommand = String.format(java.util.Locale.US,
-            "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
+            "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s', '%s')",
             id,
             lat,
             lng,
             escapeJs(name),
             escapeJs(status),
-            escapeJs(address));
+            escapeJs(address),
+            escapeJs(notes));
 
             webEngine.executeScript(jsCommand);
         }
@@ -248,7 +250,7 @@ public class MapController
         javafx.application.Platform.runLater(() -> {
             try
             {
-                ServerResult server = new ServerResult(id, name, lat, lng, ServerStatus.valueOf(status), address);
+                ServerResult server = new ServerResult(id, name, lat, lng, ServerStatus.valueOf(status), address, notes);
                 createServerRow(server);
                 serversById.put(id, server);
             }
@@ -281,8 +283,11 @@ public class MapController
         double buttonFontSize = LayoutScale.scaled(12);
         detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: " + buttonFontSize + ";"));
         detailsButton.setOnAction(e -> {
+            ServerResult currentServer = serversById.get(server.id());
+            if (currentServer == null) return;
+
             openDetailsController = new ServerDetailsController();
-            openDetailsController.setDependencies(server, database, this);
+            openDetailsController.setDependencies(currentServer, database, this);
             openDetailsController.show();
             openDetailsController = null;
         });
@@ -451,8 +456,8 @@ public class MapController
                     createServerRow(fresh);
                     if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
                     {
-                        String js = String.format(java.util.Locale.US, "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s')",
-                            fresh.id(), fresh.latitude(), fresh.longitude(), escapeJs(fresh.name()), fresh.status().name(), escapeJs(fresh.address()));
+                        String js = String.format(java.util.Locale.US, "addServiceMarker(%d, %.6f, %.6f, '%s', '%s', '%s', '%s')",
+                            fresh.id(), fresh.latitude(), fresh.longitude(), escapeJs(fresh.name()), fresh.status().name(), escapeJs(fresh.address()), escapeJs(fresh.notes()));
                         webEngine.executeScript(js);
                     }
                 }

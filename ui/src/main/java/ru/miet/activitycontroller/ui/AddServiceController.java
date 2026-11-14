@@ -3,6 +3,7 @@ package ru.miet.activitycontroller.ui;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextArea;
 import javafx.stage.Stage;
 import ru.miet.activitycontroller.core.Database;
 import ru.miet.activitycontroller.core.Database.ServerResult;
@@ -22,6 +23,8 @@ public class AddServiceController
     @FXML
     private TextField addressField;
 
+    @FXML
+    private TextArea notesArea;
 
     private Database database;
     private MapController mapController;
@@ -95,6 +98,7 @@ public class AddServiceController
         {
             String name = nameField.getText().trim();
             String address = addressField.getText().trim();
+            String notes = notesArea.getText().trim();
             float lat = Float.parseFloat(latField.getText().trim());
             float lng = Float.parseFloat(lngField.getText().trim());
             String status = "OK";
@@ -118,11 +122,11 @@ public class AddServiceController
                 throw new IllegalArgumentException("Долгота расположения должна находиться в диапазоне от -180 до 180!");
             }
 
-            int generatedId = database.insertServer(name, lat, lng, ServerStatus.valueOf(status), address);
+            int generatedId = database.insertServer(name, lat, lng, ServerStatus.valueOf(status), address, notes);
 
             if (generatedId != -1)
             {
-                mapController.addNewMarkerDirectly(generatedId, lat, lng, name, status, address);
+                mapController.addNewMarkerDirectly(generatedId, lat, lng, name, status, address, notes);
             }
 
             Stage stage = (Stage) nameField.getScene().getWindow();

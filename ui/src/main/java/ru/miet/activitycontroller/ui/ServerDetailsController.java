@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -29,6 +30,8 @@ public class ServerDetailsController
     @FXML private HBox switchBox;
     @FXML private Label switchLabel;
     @FXML private ToggleButton statusSwitch;
+    @FXML private VBox notesBox;
+    @FXML private TextArea notesArea;
     @FXML private VBox buttonsBox;
     @FXML private Button diagnosticButton;
     @FXML private Button deleteButton;
@@ -83,6 +86,18 @@ public class ServerDetailsController
                 applySwitchStyle(server.status() == ServerStatus.CONTROL ? ServerStatus.CONTROL : ServerStatus.ERROR);
             }
 
+            if (server.notes() != null && !server.notes().trim().isEmpty())
+            {
+                notesBox.setVisible(true);
+                notesBox.setManaged(true);
+                notesArea.setText(server.notes());
+            }
+            else
+            {
+                notesBox.setVisible(false);
+                notesBox.setManaged(false);
+            }
+
             applyLayoutScale();
 
             double width = LayoutScale.scaled(420.0);
@@ -132,7 +147,7 @@ public class ServerDetailsController
         try
         {
             database.updateServerStatus(server.id(), target);
-            this.server = new ServerResult(server.id(), server.name(), server.latitude(), server.longitude(), target, server.address());
+            this.server = new ServerResult(server.id(), server.name(), server.latitude(), server.longitude(), target, server.address(), server.notes());
             statusLabel.setText("Текущий статус: " + statusText(server.status()));
             applySwitchStyle(target);
             mapController.applyStatusToUi(server.id(), target);
@@ -199,6 +214,9 @@ public class ServerDetailsController
             "-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
         statusSwitch.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
         switchBox.setSpacing(spacing);
+
+        notesArea.setStyle(String.format(
+            "-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
 
         String baseBtnStyle = "-fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: %.0fpx;";
         diagnosticButton.setStyle(String.format("-fx-background-color: #3652a1; " + baseBtnStyle, buttonFontSize));
