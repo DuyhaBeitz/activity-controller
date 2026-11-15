@@ -47,11 +47,18 @@
             </ScrollPane>
 
             <VBox VBox.vgrow="ALWAYS"
-                  alignment="BOTTOM_CENTER">
+                  alignment="BOTTOM_CENTER"
+                  spacing="10">
                 <Button
                     fx:id = "addServiceButton"
                     text="Добавить сервис"
                     onAction="#onAddServiceButton"
+                    maxWidth="1.7976931348623157E308"/>
+
+                <Button
+                    fx:id="showAllServersButton"
+                    text="Все серверы →" 
+                    onAction="#onShowAllServersClick"
                     maxWidth="1.7976931348623157E308"/>
             </VBox>
         </VBox>

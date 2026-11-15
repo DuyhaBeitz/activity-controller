@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.layout.StackPane;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 
@@ -14,12 +15,24 @@ public class Viewer extends Application
     public void start(Stage stage) throws Exception
     {
         System.setProperty("sun.net.http.allowRestrictedHeaders", "true");
-        FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/scene.fxml"));
-        Parent root = fxmlLoader.load();
 
-        MapController mapController = fxmlLoader.getController();
+        FXMLLoader mapLoader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/scene.fxml"));
+        Parent mapRoot = mapLoader.load();
+        MapController mapController = mapLoader.getController();
+
+        FXMLLoader listLoader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/allservers_scene.fxml"));
+        Parent listRoot = listLoader.load();
+        AllServersController listController = listLoader.getController();
+
+        listController.setDependencies(mapController);
+        mapController.setAllServersController(listController);
         
-        Scene scene = new Scene(root);
+
+        StackPane rootStack = new StackPane();
+        rootStack.getChildren().addAll(mapRoot, listRoot);
+        listRoot.setVisible(false);
+
+        Scene scene = new Scene(rootStack);
         stage.setTitle("Мониторинг работоспособности сервисов");
         stage.setScene(scene);
 

@@ -30,6 +30,7 @@ import javafx.animation.PauseTransition;
 import javafx.util.Duration;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,10 +54,14 @@ public class MapController
     @FXML
     private Button addServiceButton;
 
+    @FXML
+    private Button showAllServersButton;
+
     private Database database;
 
     private AddServiceController activeDialogController;
     private ServerDetailsController openDetailsController;
+    private AllServersController allServersController;
 
     private final Map<Integer, ServerRowView> serverRowsById = new HashMap<>();
     private final Map<Integer, ServerResult> serversById = new HashMap<>();
@@ -146,6 +151,11 @@ public class MapController
         }
     }
 
+    public void setAllServersController(AllServersController controller)
+    {
+        this.allServersController = controller;
+    }
+
     private void loadServersFromDatabase()
     {
         if (database == null)
@@ -190,8 +200,50 @@ public class MapController
         }
     }
 
+    public List<ServerResult> getAllServers()
+    {
+        return new ArrayList<>(serversById.values());
+    }
+
+    @FXML
+    private void onShowAllServersClick()
+    {
+        showAllServersView();
+    }
+
+    // Переключает на страницу списка
+    public void showAllServersView()
+    {
+        if (allServersController == null) return;
+        
+        // Скрываем весь слой карты (GridPane)
+        mapWebView.getParent().setVisible(false);
+        
+        // Показываем слой списка
+        allServersController.getRoot().setVisible(true);
+    }
+
+    // Переключает на карту
+    public void showMapView()
+    {
+        if (allServersController == null) return;
+        
+        // Скрываем слой списка
+        allServersController.getRoot().setVisible(false);
+        
+        // Показываем слой карты
+        mapWebView.getParent().setVisible(true);
+        
+        // Просим карту пересчитать размеры (так как она была скрыта)
+        javafx.application.Platform.runLater(() -> {
+            if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED) {
+                webEngine.executeScript("if(typeof map !== 'undefined') { map.invalidateSize(); }");
+            }
+        });
+    }
+
     @FXML 
-    private void onAddServiceButton()
+    public void onAddServiceButton()
     {
         try
         {
@@ -410,6 +462,7 @@ public class MapController
     {
         double labelFontSize = LayoutScale.scaled(18);
         double buttonFontSize = LayoutScale.scaled(14);
+        double buttonPadding = LayoutScale.scaled(10);
 
         if (mainLabel != null)
         {
@@ -417,9 +470,12 @@ public class MapController
         }
         if (addServiceButton != null)
         {
-            addServiceButton.setStyle("-fx-background-color: #232853; -fx-text-fill: white; -fx-font-size: " + buttonFontSize + "px; -fx-font-weight: bold; -fx-background-radius: 5px; -fx-cursor: hand;");
+            addServiceButton.setStyle("-fx-background-color: #232853; -fx-text-fill: white; -fx-font-size: " + buttonFontSize + "px; -fx-font-weight: bold; -fx-background-radius: 5px; -fx-padding: " + buttonPadding + "px; -fx-cursor: hand;");
         }
-        
+        if (showAllServersButton != null)
+        {
+            showAllServersButton.setStyle("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-font-size: " + buttonFontSize + "px; -fx-font-weight: bold; -fx-background-radius: 5px; -fx-padding: " + buttonPadding + "px; -fx-cursor: hand;");
+        }
     }
     private void refreshAllUiComponents()
     {
@@ -481,6 +537,11 @@ public class MapController
                 {
                     openDetailsController.close();
                 }
+            }
+
+            if (allServersController != null)
+            {
+                allServersController.updateList(getAllServers());
             }
 
             System.out.println("Информация о серверах обновлена!");
