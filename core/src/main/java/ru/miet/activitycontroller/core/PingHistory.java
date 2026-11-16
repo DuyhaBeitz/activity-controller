@@ -5,6 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -13,8 +14,8 @@ import java.util.Map;
 /**
  * Stores ping history for every monitored server.
  *
- * Every entry is persisted as a single JSON object inside a JSON array,
- * written to {@code data/<id>/history.json} (created on demand).
+ * Every entry is persisted as a single JSON object (ping metrics + timestamp)
+ * inside a JSON array, written to {@code data/<id>/history.json} (created on demand).
  * The file grows like a log: each new {@link Pinger.PingResult} is appended.
  */
 public class PingHistory {
@@ -22,6 +23,7 @@ public class PingHistory {
     private static final String DATA_DIR = "data";
     private static final String HISTORY_FILE_NAME = "history.json";
 
+    private static final String FIELD_TIMESTAMP = "timestamp";
     private static final String FIELD_HTTP_CODE = "httpCode";
     private static final String FIELD_DNS_TIME = "dnsTime";
     private static final String FIELD_TCP_CONNECT_TIME = "tcpConnectTime";
@@ -48,13 +50,26 @@ public class PingHistory {
      * @throws IOException if the history file cannot be read or written
      */
     public static void AppendWrite(int id, Pinger.PingResult pingResult) throws IOException {
+        AppendWrite(id, pingResult, LocalDateTime.now());
+    }
+
+    /**
+     * Appends the given ping result with an explicit timestamp to the server's history log.
+     * Creates the {@code data/<id>/history.json} file if it does not exist yet.
+     *
+     * @param id           Identifier of the monitored server
+     * @param pingResult  The ping result to append, or null if the ping failed
+     * @param timestamp   Timestamp of the ping result
+     * @throws IOException if the history file cannot be read or written
+     */
+    public static void AppendWrite(int id, Pinger.PingResult pingResult, LocalDateTime timestamp) throws IOException {
         if (pingResult == null) {
             // A failed ping has no metrics to persist, nothing to append.
             return;
         }
 
-        List<Pinger.PingResult> history = ReadAll(id);
-        history.add(pingResult);
+        List<HistoryEntry> history = ReadAll(id);
+        history.add(new HistoryEntry(pingResult, timestamp));
 
         Path historyDir = Paths.get(DATA_DIR, String.valueOf(id));
         Path historyFile = historyDir.resolve(HISTORY_FILE_NAME);
@@ -73,19 +88,43 @@ public class PingHistory {
      * @throws IOException if the history file cannot be read
      */
     public static List<Pinger.PingResult> GetLastN(int id, int count) throws IOException {
-        List<Pinger.PingResult> history = ReadAll(id);
+        List<HistoryEntry> history = ReadAll(id);
 
         int total = history.size();
         int fromIndex = Math.max(0, total - Math.max(0, count));
 
-        return new ArrayList<>(history.subList(fromIndex, total));
+        List<Pinger.PingResult> result = new ArrayList<>();
+        for (int i = fromIndex; i < total; i++) {
+            result.add(history.get(i).ping());
+        }
+        return result;
     }
 
     /**
-     * Reads all stored ping results for the given server.
-     * Returns an empty list if the history file does not exist yet.
+     * Returns the average response time (total time) for the given server,
+     * calculated over the last {@code count} ping results.
+     * If no results exist, returns null.
+     *
+     * @param id    Identifier of the monitored server
+     * @param count Number of latest ping results to average over
+     * @return Average response time, or null if there are no results
+     * @throws IOException if the history file cannot be read
      */
-    private static List<Pinger.PingResult> ReadAll(int id) throws IOException {
+    public static Double AverageResponseTime(int id, int count) throws IOException {
+        List<Pinger.PingResult> latest = GetLastN(id, count);
+
+        if (latest.isEmpty()) {
+            return null;
+        }
+
+        double sum = 0.0;
+        for (Pinger.PingResult ping : latest) {
+            sum += ping.totalTime();
+        }
+        return sum / latest.size();
+    }
+
+    private static List<HistoryEntry> ReadAll(int id) throws IOException {
         Path historyFile = Paths.get(DATA_DIR, String.valueOf(id), HISTORY_FILE_NAME);
 
         if (!Files.isRegularFile(historyFile)) {
@@ -98,17 +137,29 @@ public class PingHistory {
         }
 
         Object parsed = new JsonParser(content).parse();
-        List<Pinger.PingResult> history = new ArrayList<>();
+        List<HistoryEntry> history = new ArrayList<>();
 
         if (parsed instanceof List<?> list) {
             for (Object item : list) {
                 if (item instanceof Map<?, ?> map) {
-                    history.add(ToPingResult(map));
+                    history.add(new HistoryEntry(ToPingResult(map), ToTimestamp(map)));
                 }
             }
         }
 
         return history;
+    }
+
+    private static LocalDateTime ToTimestamp(Map<?, ?> map) {
+        Object ts = map.get(FIELD_TIMESTAMP);
+        if (ts instanceof String value && !value.isEmpty()) {
+            try {
+                return LocalDateTime.parse(value);
+            } catch (Exception ignored) {
+                // fall through to default below
+            }
+        }
+        return LocalDateTime.now();
     }
 
     private static Pinger.PingResult ToPingResult(Map<?, ?> map) {
@@ -129,29 +180,30 @@ public class PingHistory {
         );
     }
 
-    private static String ToJson(List<Pinger.PingResult> history) {
+    private static String ToJson(List<HistoryEntry> history) {
         if (history.isEmpty()) {
             return "[]";
         }
 
         StringBuilder json = new StringBuilder("[\n");
         for (int i = 0; i < history.size(); i++) {
-            Pinger.PingResult ping = history.get(i);
+            HistoryEntry entry = history.get(i);
 
             json.append("  {\n");
-            json.append("    \"").append(FIELD_HTTP_CODE).append("\": ").append(ping.httpCode()).append(",\n");
-            json.append("    \"").append(FIELD_DNS_TIME).append("\": ").append(ping.dnsTime()).append(",\n");
-            json.append("    \"").append(FIELD_TCP_CONNECT_TIME).append("\": ").append(ping.tcpConnectTime()).append(",\n");
-            json.append("    \"").append(FIELD_TLS_TIME).append("\": ").append(ping.tlsTime()).append(",\n");
-            json.append("    \"").append(FIELD_PRE_TRANSFER_TIME).append("\": ").append(ping.preTransferTime()).append(",\n");
-            json.append("    \"").append(FIELD_REDIRECT_TIME).append("\": ").append(ping.redirectTime()).append(",\n");
-            json.append("    \"").append(FIELD_TTFB).append("\": ").append(ping.ttfb()).append(",\n");
-            json.append("    \"").append(FIELD_TOTAL_TIME).append("\": ").append(ping.totalTime()).append(",\n");
-            json.append("    \"").append(FIELD_SIZE).append("\": ").append(ping.size()).append(",\n");
-            json.append("    \"").append(FIELD_DOWNLOAD_SPEED).append("\": ").append(ping.downloadSpeed()).append(",\n");
-            json.append("    \"").append(FIELD_REMOTE_IP).append("\": ").append(JsonString(ping.remoteIp())).append(",\n");
-            json.append("    \"").append(FIELD_REMOTE_PORT).append("\": ").append(ping.remotePort()).append(",\n");
-            json.append("    \"").append(FIELD_EFFECTIVE_URL).append("\": ").append(JsonString(ping.effectiveUrl())).append("\n");
+            json.append("    \"").append(FIELD_TIMESTAMP).append("\": ").append(JsonString(entry.timestamp().toString())).append(",\n");
+            json.append("    \"").append(FIELD_HTTP_CODE).append("\": ").append(entry.ping().httpCode()).append(",\n");
+            json.append("    \"").append(FIELD_DNS_TIME).append("\": ").append(entry.ping().dnsTime()).append(",\n");
+            json.append("    \"").append(FIELD_TCP_CONNECT_TIME).append("\": ").append(entry.ping().tcpConnectTime()).append(",\n");
+            json.append("    \"").append(FIELD_TLS_TIME).append("\": ").append(entry.ping().tlsTime()).append(",\n");
+            json.append("    \"").append(FIELD_PRE_TRANSFER_TIME).append("\": ").append(entry.ping().preTransferTime()).append(",\n");
+            json.append("    \"").append(FIELD_REDIRECT_TIME).append("\": ").append(entry.ping().redirectTime()).append(",\n");
+            json.append("    \"").append(FIELD_TTFB).append("\": ").append(entry.ping().ttfb()).append(",\n");
+            json.append("    \"").append(FIELD_TOTAL_TIME).append("\": ").append(entry.ping().totalTime()).append(",\n");
+            json.append("    \"").append(FIELD_SIZE).append("\": ").append(entry.ping().size()).append(",\n");
+            json.append("    \"").append(FIELD_DOWNLOAD_SPEED).append("\": ").append(entry.ping().downloadSpeed()).append(",\n");
+            json.append("    \"").append(FIELD_REMOTE_IP).append("\": ").append(JsonString(entry.ping().remoteIp())).append(",\n");
+            json.append("    \"").append(FIELD_REMOTE_PORT).append("\": ").append(entry.ping().remotePort()).append(",\n");
+            json.append("    \"").append(FIELD_EFFECTIVE_URL).append("\": ").append(JsonString(entry.ping().effectiveUrl())).append("\n");
             json.append("  }");
 
             if (i < history.size() - 1) {
@@ -173,6 +225,9 @@ public class PingHistory {
                 .replace("\n", "\\n")
                 .replace("\r", "\\r")
                 .replace("\t", "\\t") + "\"";
+    }
+
+    private record HistoryEntry(Pinger.PingResult ping, LocalDateTime timestamp) {
     }
 
     /**
