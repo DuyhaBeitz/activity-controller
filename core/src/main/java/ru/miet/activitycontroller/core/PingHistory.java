@@ -124,6 +124,26 @@ public class PingHistory {
         return sum / latest.size();
     }
 
+    /**
+     * Returns a list of servers sorted by their average response time
+     * calculated over the last {@code count} ping results.
+     * If no results exist, returns empty.
+     *
+     * @param database    Existing Database for server lookups
+     * @param count Number of latest ping results to average over
+     * @return sorted list of servers
+     * @throws IOException if the history file cannot be read
+     */
+    public static List<ServerResult> GetIDsSortedByAvgResponseTime(Database database, int count) throws IOException {
+        List<ServerResult> res = database.getServers();
+
+        res.sort(Comparator.comparingDouble(
+            server -> AverageResponseTime(server.id(), count)
+        ));
+
+        return res;
+    }
+
     private static List<HistoryEntry> ReadAll(int id) throws IOException {
         Path historyFile = Paths.get(DATA_DIR, String.valueOf(id), HISTORY_FILE_NAME);
 
