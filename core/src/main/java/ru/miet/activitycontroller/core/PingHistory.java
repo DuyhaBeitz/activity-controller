@@ -134,7 +134,7 @@ public class PingHistory {
      * @return sorted list of servers
      * @throws IOException if the history file cannot be read
      */
-    public static List<ServerResult> GetIDsSortedByAvgResponseTime(Database database, int count) throws IOException {
+    public static List<ServerResult> GetSortedServersByAvgResponseTime(Database database, int count) throws IOException {
         List<ServerResult> res = database.getServers();
 
         res.sort(Comparator.comparingDouble(
