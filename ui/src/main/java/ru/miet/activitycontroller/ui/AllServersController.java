@@ -6,18 +6,21 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Circle;
 import ru.miet.activitycontroller.core.Database;
 import ru.miet.activitycontroller.core.Database.ServerResult;
+import ru.miet.activitycontroller.core.PingHistory;
 import ru.miet.activitycontroller.core.ServerStatus;
 import javafx.scene.layout.BorderPane;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javafx.concurrent.Task;
 
 public class AllServersController
 {
@@ -38,6 +41,9 @@ public class AllServersController
     @FXML private TextArea detailsNotes;
 
     private MapController mapController;
+
+    private boolean sortByResponseTime = false;
+    @FXML private MenuItem sortByResponseItem;
     
     private final Map<Integer, ServerRowView> serverRowsById = new HashMap<>();
     private final Map<Integer, ServerResult> currentServers = new HashMap<>();
@@ -54,6 +60,11 @@ public class AllServersController
         
         backButton.setOnAction(e -> mapController.showMapView());
         addButton.setOnAction(e -> mapController.onAddServiceFromList());
+
+        sortByResponseItem.setOnAction(e -> {
+            sortByResponseTime = true;
+            loadAndSortByResponseTime();
+        });
         
         applyStyles();
         updateList(mapController.getAllServers());
@@ -113,6 +124,45 @@ public class AllServersController
                 {
                     showServerDetails(fresh);
                 }
+            }
+        }
+    }
+
+    private void loadAndSortByResponseTime() {
+        Task<List<ServerResult>> task = new Task<>()
+        {
+            @Override
+            protected List<ServerResult> call() throws Exception
+            {
+                return PingHistory.GetSortedServersByAvgResponseTime(mapController.getDatabase(), 10).reversed();
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            List<ServerResult> sorted = task.getValue();
+            if (sorted != null)
+            {
+                reorderUi(sorted);
+            }
+        });
+
+        task.setOnFailed(e -> {
+            task.getException().printStackTrace();
+            Viewer.showErrorAlert("Ошибка", "Не удалось отсортировать: " + task.getException().getMessage());
+        });
+
+        new Thread(task).start();
+    }
+
+    private void reorderUi(List<ServerResult> sortedServers)
+    {
+        serversContainer.getChildren().clear();
+        for (ServerResult server : sortedServers)
+        {
+            ServerRowView rowView = serverRowsById.get(server.id());
+            if (rowView != null)
+            {
+                serversContainer.getChildren().add(rowView.container);
             }
         }
     }

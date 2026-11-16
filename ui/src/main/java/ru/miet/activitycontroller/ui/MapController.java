@@ -75,6 +75,11 @@ public class MapController
         return this.webEngine;
     }
 
+    public Database getDatabase()
+    {
+        return database;
+    }
+
     private ScheduledExecutorService monitoringScheduler;
 
     @FXML

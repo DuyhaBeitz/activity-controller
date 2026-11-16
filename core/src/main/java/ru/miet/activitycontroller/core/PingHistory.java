@@ -138,9 +138,12 @@ public class PingHistory {
             res.sort(Comparator.comparingDouble(
                     server -> {
                         try {
-                            return AverageResponseTime(server.id(), count);
+                            Double avg = AverageResponseTime(server.id(), count);
+                            // Если истории нет, ставим 0.0 (будут в начале). 
+                            // Если хочешь в конец — используй Double.MAX_VALUE.
+                            return avg != null ? avg : 0.0; 
                         } catch (IOException e) {
-                            throw new RuntimeException(e);
+                            return 0.0;
                         }
                     }
             ));
@@ -149,7 +152,7 @@ public class PingHistory {
         catch (Exception e) {
             System.err.println(e.getMessage());
         }
-        return null;
+        return new ArrayList<>();
     }
 
     private static List<HistoryEntry> ReadAll(int id) throws IOException {

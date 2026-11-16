@@ -49,7 +49,7 @@
                         <items>
                             <MenuItem text="По имени (А-Я)" />
                             <MenuItem text="По статусу" />
-                            <MenuItem text="По времени ответа" />
+                            <MenuItem fx:id="sortByResponseItem" text="По времени ответа" />
                         </items>
                     </MenuButton>
                     <MenuButton
