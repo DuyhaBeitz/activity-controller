@@ -26,6 +26,7 @@ public class AddServiceController
     @FXML
     private TextArea notesArea;
 
+    private boolean isOpenedFromList = false;
     private Database database;
     private MapController mapController;
 
@@ -33,6 +34,11 @@ public class AddServiceController
     {
         this.database = database;
         this.mapController = mapController;
+    }
+
+    public void setOpenedFromList(boolean openedFromList)
+    {
+        this.isOpenedFromList = openedFromList;
     }
 
     @FXML
@@ -47,7 +53,7 @@ public class AddServiceController
             Stage stage = (Stage) nameField.getScene().getWindow();
             stage.hide(); 
 
-            mapController.getWebEngine().executeScript("enableMapClickSelection()");
+            mapController.prepareForMapSelection(isOpenedFromList);
         } catch (Exception ex) {
             Viewer.showErrorAlert("Ошибка", ex.getMessage());
             ex.printStackTrace();

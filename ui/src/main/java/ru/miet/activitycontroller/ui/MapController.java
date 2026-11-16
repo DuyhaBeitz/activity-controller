@@ -57,6 +57,8 @@ public class MapController
     @FXML
     private Button showAllServersButton;
 
+    private boolean returnToListAfterMapClick = false;
+
     private Database database;
 
     private AddServiceController activeDialogController;
@@ -160,7 +162,6 @@ public class MapController
     {
         if (database == null)
         {
-            // Явно сообщаем в UI, а не молчим
             javafx.application.Platform.runLater(() -> {
                 mainLabel.setText("НЕТ ПОДКЛЮЧЕНИЯ К БД");
                 Double fontsize = LayoutScale.scaled(18);
@@ -211,30 +212,23 @@ public class MapController
         showAllServersView();
     }
 
-    // Переключает на страницу списка
     public void showAllServersView()
     {
         if (allServersController == null) return;
         
-        // Скрываем весь слой карты (GridPane)
         mapWebView.getParent().setVisible(false);
         
-        // Показываем слой списка
         allServersController.getRoot().setVisible(true);
     }
 
-    // Переключает на карту
     public void showMapView()
     {
         if (allServersController == null) return;
         
-        // Скрываем слой списка
         allServersController.getRoot().setVisible(false);
         
-        // Показываем слой карты
         mapWebView.getParent().setVisible(true);
         
-        // Просим карту пересчитать размеры (так как она была скрыта)
         javafx.application.Platform.runLater(() -> {
             if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED) {
                 webEngine.executeScript("if(typeof map !== 'undefined') { map.invalidateSize(); }");
@@ -245,6 +239,16 @@ public class MapController
     @FXML 
     public void onAddServiceButton()
     {
+        openAddServiceDialog(false); // С карты
+    }
+
+    public void onAddServiceFromList()
+    {
+        openAddServiceDialog(true); // Со списка
+    }
+
+    private void openAddServiceDialog(boolean fromList)
+    {
         try
         {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/addservice_scene.fxml"));
@@ -253,6 +257,7 @@ public class MapController
             AddServiceController controller = loader.getController();
             this.activeDialogController = controller;
             controller.setDependencies(database, this);
+            controller.setOpenedFromList(fromList);
 
             Stage modalStage = new Stage();
             modalStage.initModality(Modality.APPLICATION_MODAL);
@@ -267,9 +272,24 @@ public class MapController
         }
         catch (Exception e)
         {
-        System.err.println("Не удалось открыть модальное окно добавления: " + e.getMessage());
-        e.printStackTrace();
+            System.err.println("Не удалось открыть модальное окно добавления: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
+
+    public void prepareForMapSelection(boolean fromList)
+    {
+        this.returnToListAfterMapClick = fromList;
+        
+        if (fromList)
+        {
+            showMapView(); 
+        }
+        
+        if (webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
+        {
+            webEngine.executeScript("enableMapClickSelection()");
+        }
     }
 
     public void onCoordinatesSelected(double lat, double lng)
@@ -278,6 +298,12 @@ public class MapController
             if (activeDialogController != null)
             {
                 activeDialogController.populateCoordinates(lat, lng);
+            }
+
+            if (returnToListAfterMapClick)
+            {
+                returnToListAfterMapClick = false;
+                showAllServersView();
             }
         });
     }
@@ -450,6 +476,18 @@ public class MapController
         {
             updateCircleColor(rowView.statusIndicator, status);
             rowView.currentStatus = status;
+        }
+
+        ServerResult current = serversById.get(id);
+        if (current != null && current.status() != status)
+        {
+            serversById.put(id, new ServerResult(
+                current.id(), current.name(), current.latitude(), current.longitude(), status, current.address(), current.notes()));
+        }
+
+        if (allServersController != null)
+        {
+            allServersController.updateList(getAllServers());
         }
     }
 
