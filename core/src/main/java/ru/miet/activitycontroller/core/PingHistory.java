@@ -5,11 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Stores ping history for every monitored server.
@@ -134,14 +132,24 @@ public class PingHistory {
      * @return sorted list of servers
      * @throws IOException if the history file cannot be read
      */
-    public static List<ServerResult> GetSortedServersByAvgResponseTime(Database database, int count) throws IOException {
-        List<ServerResult> res = database.getServers();
-
-        res.sort(Comparator.comparingDouble(
-            server -> AverageResponseTime(server.id(), count)
-        ));
-
-        return res;
+    public static List<Database.ServerResult> GetSortedServersByAvgResponseTime(Database database, int count) throws IOException {
+        try {
+            List<Database.ServerResult> res = database.getServers();
+            res.sort(Comparator.comparingDouble(
+                    server -> {
+                        try {
+                            return AverageResponseTime(server.id(), count);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+            ));
+            return res;
+        }
+        catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
+        return null;
     }
 
     private static List<HistoryEntry> ReadAll(int id) throws IOException {
