@@ -1,0 +1,317 @@
+/* ПАЛИТРА И ПЕРЕМЕННЫЕ ТЕМ */
+.root
+{
+    -bg-main: #f4f6f7;
+    -bg-side: #f6f6f3;
+    -bg-card: #ffffff;
+    -bg-header: #232853;
+    -bg-row: #e3e3e3;
+    -bg-row-hover: #d5d8dc;
+    -bg-filter: #e6f8fe;
+
+    -text-primary: #1c1c1c;
+    -text-accent: #232853;
+    -text-on-dark: #ffffff;
+
+    -btn-primary: #232853;
+    -btn-primary-hover: #181c3a;
+    -btn-secondary: #3652a1;
+    -btn-secondary-hover: #293f7d;
+    -btn-danger: #e74c3c;
+    -btn-danger-hover: #c0392b;
+
+    -border-color: #dcdcdc;
+}
+
+/* тёмная тема */
+.root.dark
+{
+    -bg-main: #181a1f;
+    -bg-side: #21252b;
+    -bg-card: #282c34;
+    -bg-header: #13151a;
+    -bg-row: #2c313a;
+    -bg-row-hover: #383e4a;
+    -bg-filter: #2c313a;
+
+    -text-primary: #e6e6e6;
+    -text-accent: #61afef;
+    -text-on-dark: #ffffff;
+
+    -btn-primary: #3b4252;
+    -btn-primary-hover: #4c566a;
+    -btn-secondary: #4a69bd;
+    -btn-secondary-hover: #3c559c;
+    -btn-danger: #e74c3c;
+    -btn-danger-hover: #c0392b;
+
+    -border-color: #3e4451;
+}
+
+/* КОНТЕЙНЕРЫ И ПАНЕЛИ */
+.app-bg
+{
+    -fx-background-color: -bg-main;
+}
+
+.side-panel
+{
+    -fx-background-color: -bg-side;
+}
+
+.card-panel
+{
+    -fx-background-color: -bg-card;
+    -fx-padding: 1em;
+}
+
+.top-bar
+{
+    -fx-background-color: -bg-header;
+    -fx-padding: 1em;
+}
+
+.transparent-scroll
+{
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-border-color: transparent;
+}
+.transparent-scroll > .viewport
+{
+    -fx-background-color: transparent;
+}
+
+.clean-split-pane
+{
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+/* ТЕКСТ И ЗАГОЛОВКИ */
+.title-large
+{
+    -fx-font-size: 1.8em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-accent;
+}
+
+.title-medium
+{
+    -fx-font-size: 1.5em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-primary;
+}
+
+.title-error
+{
+    -fx-font-size: 1.3em;
+    -fx-font-weight: bold;
+    -fx-text-fill: #e74c3c;
+}
+
+.label-bold
+{
+    -fx-font-size: 1.15em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-primary;
+}
+
+.label-regular
+{
+    -fx-font-size: 1.15em;
+    -fx-text-fill: -text-primary;
+}
+
+.ping-console
+{
+    -fx-font-family: 'Consolas', 'Monospaced', monospace;
+    -fx-font-size: 1.1em;
+    -fx-text-fill: -text-primary;
+}
+
+/* КНОПКИ И ЭЛЕМЕНТЫ УПРАВЛЕНИЯ */
+.btn-primary, .btn-secondary, .btn-danger
+{
+    -fx-text-fill: -text-on-dark;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.1em;
+    -fx-padding: 0.6em 1em;
+    -fx-background-radius: 6px;
+    -fx-cursor: hand;
+}
+
+.btn-primary
+{
+    -fx-background-color: -btn-primary;
+}
+.btn-primary:hover
+{
+    -fx-background-color: -btn-primary-hover;
+}
+
+.btn-secondary
+{
+    -fx-background-color: -btn-secondary;
+}
+.btn-secondary:hover
+{
+    -fx-background-color: -btn-secondary-hover;
+}
+
+.btn-danger
+{
+    -fx-background-color: -btn-danger;
+}
+.btn-danger:hover
+{
+    -fx-background-color: -btn-danger-hover;
+}
+
+.btn-small
+{
+    -fx-font-size: 0.9em;
+    -fx-padding: 0.4em 0.8em;
+    -fx-background-radius: 4px;
+}
+
+.btn-back
+{
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-on-dark;
+    -fx-font-size: 1.15em;
+    -fx-font-weight: bold;
+    -fx-padding: 0.4em 0.8em;
+    -fx-cursor: hand;
+}
+.btn-back:hover
+{
+    -fx-underline: true;
+}
+
+.filter-menu-btn
+{
+    -fx-background-color: -bg-filter;
+    -fx-font-size: 1.1em;
+    -fx-background-radius: 4px;
+    -fx-padding: 0.4em 0.8em;
+    -fx-cursor: hand;
+}
+.filter-menu-btn .label
+{
+    -fx-text-fill: -text-primary;
+}
+
+.switch-on, .switch-off
+{
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.1em;
+    -fx-padding: 0.4em 0.9em;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+.switch-on  { -fx-background-color: #e67e22; }
+.switch-off { -fx-background-color: #e74c3c; }
+
+/* Тумблер темы в настройках */
+.theme-switch-on, .theme-switch-off
+{
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 1.05em;
+    -fx-padding: 0.4em 0.9em;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+.theme-switch-on  { -fx-background-color: #3652a1; }
+.theme-switch-off { -fx-background-color: #95a5a6; }
+
+/* ПОЛЯ ВВОДА */
+.styled-input
+{
+    -fx-font-size: 1.1em;
+    -fx-padding: 0.55em;
+    -fx-background-color: -bg-card;
+    -fx-text-fill: -text-primary;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 4px;
+    -fx-background-radius: 4px;
+}
+
+.styled-textarea
+{
+    -fx-font-size: 1.1em;
+    -fx-control-inner-background: -bg-main;
+    -fx-text-fill: -text-primary;
+    -fx-background-color: transparent;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 4px;
+}
+
+/* СТРОКИ СЕРВЕРОВ И ИНДИКАТОРЫ СТАТУСОВ */
+.server-row
+{
+    -fx-background-color: -bg-row;
+    -fx-background-radius: 5px;
+    -fx-padding: 0.6em;
+    -fx-cursor: hand;
+}
+.server-row:hover
+{
+    -fx-background-color: -bg-row-hover;
+}
+
+.server-row-name
+{
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 1em;
+    -fx-font-weight: bold;
+}
+
+.status-dot
+{
+    -fx-stroke: white;
+    -fx-stroke-width: 1px;
+}
+.status-ok      { -fx-fill: #2ecc71; }
+.status-warning { -fx-fill: #f1c40f; }
+.status-error   { -fx-fill: #e74c3c; }
+.status-control { -fx-fill: #e67e22; }
+.status-unknown { -fx-fill: #95a5a6; }
+
+/* ВЫПАДАЮЩИЕ МЕНЮ (MenuButton / ContextMenu) */
+.context-menu
+{
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border-color;
+    -fx-border-width: 1px;
+    -fx-background-radius: 4px;
+    -fx-border-radius: 4px;
+    -fx-padding: 0.3em 0;
+}
+
+.menu-item
+{
+    -fx-background-color: transparent;
+    -fx-padding: 0.5em 1em;
+    -fx-cursor: hand;
+}
+
+.menu-item .label
+{
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 1em;
+}
+
+.menu-item:focused,
+.menu-item:hover
+{
+    -fx-background-color: -bg-row-hover;
+}
+
+.menu-item:focused .label,
+.menu-item:hover .label
+{
+    -fx-text-fill: -text-primary;
+}

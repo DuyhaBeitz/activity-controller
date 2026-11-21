@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.geometry.Insets?>
+
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.MenuButton?>
@@ -14,62 +14,48 @@
 <BorderPane xmlns="http://javafx.com" 
             xmlns:fx="http://javafx.com" 
             fx:controller="ru.miet.activitycontroller.ui.AllServersController"
-            style="-fx-background-color: #f4f6f7;"
+            styleClass="app-bg"
             fx:id="rootPane">
 
     <top>
-        <HBox spacing="15" alignment="CENTER_LEFT" style="-fx-padding: 15; -fx-background-color: #232853;">
-            <Button fx:id="backButton"
-                    text="← На главную"/>
-            
+        <HBox spacing="15" alignment="CENTER_LEFT" styleClass="top-bar">
+            <Button fx:id="backButton" text="← На главную" styleClass="btn-back"/>
             <HBox HBox.hgrow="ALWAYS" />
-            
-            <Button fx:id="addButton"
-                    text="Добавить сервис"/>
+            <Button fx:id="addButton" text="Добавить сервис" styleClass="btn-secondary"/>
         </HBox>
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.3" style="-fx-background-color: transparent;">
-            <VBox minWidth="320">
-                <Label
-                    fx:id="mainLabel"
-                    text="Все серверы"/>
+        <SplitPane dividerPositions="0.3" styleClass="clean-split-pane">
+            <VBox minWidth="320" spacing="10" style="-fx-padding: 15;">
+                <Label fx:id="mainLabel" text="Все серверы" styleClass="title-large"/>
                 
-                <HBox
-                    spacing="10"
-                    style="-fx-padding: 0 15 10 15;">
-                    
-                    <MenuButton
-                        fx:id="sortButton"
-                        text="Сортировать"
-                        maxWidth="1.7976931348623157E308"
-                        HBox.hgrow="ALWAYS"
-                        style="-fx-background-color: #e6f8fe; -fx-cursor: hand;">
+                <HBox spacing="10">
+                    <MenuButton fx:id="sortButton"
+                                text="Сортировать"
+                                maxWidth="1.7976931348623157E308"
+                                HBox.hgrow="ALWAYS"
+                                styleClass="filter-menu-btn">
                         <items>
                             <MenuItem text="По имени (А-Я)" />
                             <MenuItem text="По статусу" />
                             <MenuItem fx:id="sortByResponseItem" text="По времени ответа" />
                         </items>
                     </MenuButton>
-                    <MenuButton
-                        fx:id="filterButton"
-                        text="Выбрать тег"
-                        maxWidth="1.7976931348623157E308"
-                        HBox.hgrow="ALWAYS"
-                        style="-fx-background-color: #e6f8fe; -fx-cursor: hand;">
+                    <MenuButton fx:id="filterButton"
+                                text="Выбрать тег"
+                                maxWidth="1.7976931348623157E308"
+                                HBox.hgrow="ALWAYS"
+                                styleClass="filter-menu-btn">
                         <items>
                             <MenuItem text="Все" />
                         </items>
                     </MenuButton>
                 </HBox>
 
-                <ScrollPane
-                    fitToWidth="true"
-                    VBox.vgrow="ALWAYS"
-                    style="-fx-background-color: transparent; -fx-background: #f4f6f7; -fx-border-color: transparent;">
+                <ScrollPane fitToWidth="true" VBox.vgrow="ALWAYS" styleClass="transparent-scroll">
                     <content>
-                        <VBox fx:id="serversContainer" spacing="10" style="-fx-padding: 0 10 10 10;"/>
+                        <VBox fx:id="serversContainer" spacing="10" />
                     </content>
                 </ScrollPane>
             </VBox>
@@ -77,19 +63,16 @@
             <ScrollPane fitToWidth="true" 
                         visible="false" 
                         managed="false"
-                        style="-fx-background-color: transparent; -fx-background: white; -fx-border-color: transparent;"
+                        styleClass="transparent-scroll, card-panel"
                         fx:id="detailsScrollPane">
                 <content>
-                    <VBox fx:id="detailsPanel" 
-                          style="-fx-background-color: white; -fx-padding: 20;" 
-                          spacing="15">
-                          
-                        <Label fx:id="detailsTitle" text="Сервер: ..." />
-                        <Label fx:id="detailsStatus" text="Текущий статус: " />
+                    <VBox fx:id="detailsPanel" styleClass="card-panel" style="-fx-padding: 20;" spacing="15">
+                        <Label fx:id="detailsTitle" text="Сервер: ..." styleClass="title-large" />
+                        <Label fx:id="detailsStatus" text="Текущий статус: " styleClass="label-regular" />
                         
                         <VBox fx:id="notesBox" spacing="5" visible="false" managed="false">
-                            <Label fx:id="notesLabel" text="Заметки:" />
-                            <TextArea fx:id="detailsNotes" editable="false" wrapText="true" prefRowCount="5" />
+                            <Label fx:id="notesLabel" text="Заметки:" styleClass="label-bold" />
+                            <TextArea fx:id="detailsNotes" editable="false" wrapText="true" prefRowCount="5" styleClass="styled-textarea" />
                         </VBox>
                     </VBox>
                 </content>

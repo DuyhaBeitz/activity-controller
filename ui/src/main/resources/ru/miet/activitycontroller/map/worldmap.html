@@ -80,7 +80,24 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-            }   
+            }  
+
+            /* Тёмная тема для карты без тормозов */
+            body.dark-theme,
+            body.dark-theme #map,
+            body.dark-theme .leaflet-container {
+                background-color: #181a1f !important;
+            }
+
+            body.dark-theme .leaflet-tile-pane {
+                opacity: 0.45;
+            }
+
+            body.dark-theme .responsive-tooltip {
+                background-color: #282c34 !important;
+                color: #e6e6e6 !important;
+                border: 1px solid #3e4451 !important;
+            }
         </style>
     </head>
 
@@ -294,6 +311,18 @@
             {
                 map.off('click');
                 document.getElementById('map').style.cursor = '';
+            }
+
+            function setDarkTheme(isDark)
+            {
+                if (isDark)
+                {
+                    document.body.classList.add('dark-theme');
+                }
+                else
+                {
+                    document.body.classList.remove('dark-theme');
+                }
             }
 
             setTimeout(function() { 

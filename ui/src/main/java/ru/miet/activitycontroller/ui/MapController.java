@@ -57,6 +57,9 @@ public class MapController
     @FXML
     private Button showAllServersButton;
 
+    @FXML 
+    private Button openSettingsButton;
+
     private boolean returnToListAfterMapClick = false;
 
     private Database database;
@@ -115,6 +118,14 @@ public class MapController
             System.err.println("Критическая ошибка: Не удалось найти worldmap.html в ресурсах!");
         }
 
+        ThemeManager.registerMapController(this);
+        webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+            if (newState == Worker.State.SUCCEEDED) {
+                // после загрузки HTML применяем текущую тему
+                updateMapTheme(ThemeManager.IsDarkTheme());
+            }
+        });
+
         // Слушатель загрузки
         webEngine.getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue == javafx.concurrent.Worker.State.SUCCEEDED)
@@ -123,6 +134,7 @@ public class MapController
                 window.setMember("javaApp", this);
 
                 webEngine.executeScript("window.deviceScreenScale = " + LayoutScale.getScreenScale() + ";");
+                updateMapTheme(ThemeManager.IsDarkTheme());
                 loadServersFromDatabase();
 
                 startAutoMonitoring();
@@ -153,7 +165,6 @@ public class MapController
                 {
                     serversContainer.setSpacing(LayoutScale.scaled(10.0));
                 }
-                updateMainUiStyles();
             });
         }
     }
@@ -169,8 +180,7 @@ public class MapController
         {
             javafx.application.Platform.runLater(() -> {
                 mainLabel.setText("НЕТ ПОДКЛЮЧЕНИЯ К БД");
-                Double fontsize = LayoutScale.scaled(18);
-                mainLabel.setStyle("-fx-font-size:"+fontsize+"px; -fx-text-fill: #e74c3c; -fx-font-weight: bold;");
+                mainLabel.getStyleClass().setAll("title-error");
             });
             return;
         }
@@ -272,7 +282,9 @@ public class MapController
             double dynamicWidth = LayoutScale.scaled(500.0);
             double dynamicHeight = LayoutScale.scaled(620.0);
 
-            modalStage.setScene(new Scene(root, dynamicWidth, dynamicHeight));
+            Scene dialogScene = new Scene(root, dynamicWidth, dynamicHeight);
+             ThemeManager.applyToScene(dialogScene);
+            modalStage.setScene(dialogScene);
             modalStage.showAndWait();
         }
         catch (Exception e)
@@ -348,8 +360,7 @@ public class MapController
     {
         HBox serverRow = new HBox(8);
         serverRow.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
-        int padding = (int) LayoutScale.scaled(8);
-        serverRow.setStyle(String.format("-fx-padding: " + padding + "; -fx-background-color: #e3e3e3; -fx-background-radius: 4;"));
+        serverRow.getStyleClass().add("server-row");
         serverRow.setMaxWidth(Double.MAX_VALUE);
 
         int radius = (int) LayoutScale.scaled(6);
@@ -357,14 +368,12 @@ public class MapController
         updateCircleColor(statusIndicator, server.status());
 
         Label nameLabel = new Label(server.name());
-        double labelFontSize = LayoutScale.scaled(14);
-        nameLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-size: " + labelFontSize + "; -fx-font-weight: bold;"));
+        nameLabel.getStyleClass().add("server-row-name");
         HBox.setHgrow(nameLabel, javafx.scene.layout.Priority.ALWAYS);
         nameLabel.setMaxWidth(Double.MAX_VALUE);
 
         Button detailsButton = new Button("Подробнее");
-        double buttonFontSize = LayoutScale.scaled(12);
-        detailsButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-font-size: " + buttonFontSize + ";"));
+        detailsButton.getStyleClass().addAll("btn-secondary", "btn-small");
         detailsButton.setOnAction(e -> {
             ServerResult currentServer = serversById.get(server.id());
             if (currentServer == null) return;
@@ -384,15 +393,14 @@ public class MapController
 
     private void updateCircleColor(Circle circle, ServerStatus status)
     {
-        String color = switch (status)
+        circle.getStyleClass().setAll("status-dot", switch (status)
         {
-            case OK -> "#2ecc71";
-            case WARNING -> "#f1c40f";
-            case ERROR -> "#e74c3c";
-            case CONTROL -> "#e67e22";
-            default -> "#95a5a6";
-        };
-        circle.setStyle("-fx-fill: " + color + "; -fx-stroke: white; -fx-stroke-width: 1;");
+            case OK -> "status-ok";
+            case WARNING -> "status-warning";
+            case ERROR -> "status-error";
+            case CONTROL -> "status-control";
+            default -> "status-unknown";
+        });
     }
 
     public void openDiagnostic(int id)
@@ -501,25 +509,6 @@ public class MapController
         Platform.runLater(() -> applyStatusToUi(id, status));
     }
 
-    private void updateMainUiStyles()
-    {
-        double labelFontSize = LayoutScale.scaled(18);
-        double buttonFontSize = LayoutScale.scaled(14);
-        double buttonPadding = LayoutScale.scaled(10);
-
-        if (mainLabel != null)
-        {
-            mainLabel.setStyle("-fx-font-size: " + labelFontSize + "px; -fx-text-fill: #232853; -fx-font-weight: bold;");
-        }
-        if (addServiceButton != null)
-        {
-            addServiceButton.setStyle("-fx-background-color: #232853; -fx-text-fill: white; -fx-font-size: " + buttonFontSize + "px; -fx-font-weight: bold; -fx-background-radius: 5px; -fx-padding: " + buttonPadding + "px; -fx-cursor: hand;");
-        }
-        if (showAllServersButton != null)
-        {
-            showAllServersButton.setStyle("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-font-size: " + buttonFontSize + "px; -fx-font-weight: bold; -fx-background-radius: 5px; -fx-padding: " + buttonPadding + "px; -fx-cursor: hand;");
-        }
-    }
     private void refreshAllUiComponents()
     {
         if (database == null) return;
@@ -625,6 +614,41 @@ public class MapController
         catch(Exception e)
         {
             monitoringScheduler.shutdownNow();
+        }
+    }
+
+    @FXML private void onOpenSettingsButton()
+    {
+        try
+        {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/ru/miet/activitycontroller/settings_scene.fxml"));
+            Parent root = loader.load();
+            SettingsController controller = loader.getController();
+
+            Stage modalStage = new Stage();
+            modalStage.initModality(Modality.APPLICATION_MODAL);
+            modalStage.setTitle("Настройки");
+            modalStage.setResizable(false);
+
+            // Если закрыли окно на крестик без нажатия "Сохранить" — откатываем тему
+            modalStage.setOnCloseRequest(e -> controller.restoreIfCancelled());
+
+            Scene scene = new Scene(root, LayoutScale.scaled(420.0), LayoutScale.scaled(360.0));
+            ThemeManager.applyToScene(scene);
+            modalStage.setScene(scene);
+            modalStage.showAndWait();
+        }
+        catch (Exception e)
+        {
+            Viewer.showErrorAlert("Ошибка", "Не удалось открыть настройки:\n" + e.getMessage());
+        }
+    }
+
+    public void updateMapTheme(boolean isDark)
+    {
+        if (webEngine != null && webEngine.getLoadWorker().getState() == Worker.State.SUCCEEDED)
+        {
+            webEngine.executeScript("if (typeof setDarkTheme === 'function') { setDarkTheme(" + isDark + "); }");
         }
     }
 

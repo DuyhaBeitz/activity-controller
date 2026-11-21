@@ -29,20 +29,20 @@
 
         <VBox fx:id="sidePanel"
               spacing="15" 
-              style="-fx-background-color: #f6f6f3;" 
+              styleClass="side-panel"
               GridPane.columnIndex="1" 
               GridPane.rowIndex="0">
               
-            <Label fx:id="mainLabel" text="МОНИТОРИНГ" />
+            <Label fx:id="mainLabel" text="МОНИТОРИНГ" styleClass="title-large"/>
             
             <ScrollPane fx:id="serversScrollPane"
                         fitToWidth="true" 
                         VBox.vgrow="ALWAYS"
-                        style="-fx-background-color: transparent; -fx-background: #f6f6f3; -fx-border-color: transparent;">
+                        styleClass="transparent-scroll">
                 <content>
                     <VBox fx:id="serversContainer"
                           spacing="10"
-                          style="-fx-background-color: #f6f6f3;" />
+                          styleClass="side-panel" />
                 </content>
             </ScrollPane>
 
@@ -53,13 +53,22 @@
                     fx:id = "addServiceButton"
                     text="Добавить сервис"
                     onAction="#onAddServiceButton"
-                    maxWidth="1.7976931348623157E308"/>
+                    maxWidth="1.7976931348623157E308"
+                    styleClass="btn-primary" />
+                
+                <Button
+                    fx:id = "openSettingsButton"
+                    text="Настройки"
+                    onAction="#onOpenSettingsButton"
+                    maxWidth="1.7976931348623157E308"
+                    styleClass="btn-secondary" />
 
                 <Button
                     fx:id="showAllServersButton"
                     text="Все серверы →" 
                     onAction="#onShowAllServersClick"
-                    maxWidth="1.7976931348623157E308"/>
+                    maxWidth="1.7976931348623157E308"
+                    styleClass="btn-primary" />
             </VBox>
         </VBox>
 

@@ -98,8 +98,6 @@ public class ServerDetailsController
                 notesBox.setManaged(false);
             }
 
-            applyLayoutScale();
-
             double width = LayoutScale.scaled(420.0);
             double height = LayoutScale.scaled(540.0);
 
@@ -107,7 +105,9 @@ public class ServerDetailsController
             stage.initModality(Modality.APPLICATION_MODAL);
             stage.setTitle("Информация о сервисе");
             stage.setResizable(false);
-            stage.setScene(new Scene(root, width, height));
+            Scene scene = new Scene(root, width, height);
+            ThemeManager.applyToScene(scene);
+            stage.setScene(scene);
             stage.showAndWait();
         }
         catch(Exception e)
@@ -177,53 +177,16 @@ public class ServerDetailsController
 
     private void applySwitchStyle(ServerStatus status)
     {
-        double textSize = LayoutScale.scaled(16.0);
         if (status == ServerStatus.CONTROL)
         {
             statusSwitch.setText("ВКЛ");
-            statusSwitch.setStyle(String.format(
-                "-fx-background-color: #e67e22; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;",
-                textSize));
+            statusSwitch.getStyleClass().setAll("toggle-button", "switch-on");
         }
         else
         {
             statusSwitch.setText("ВЫКЛ");
-            statusSwitch.setStyle(String.format(
-                "-fx-background-color: #e74c3c; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand; -fx-font-size: %.0fpx;",
-                textSize));
+            statusSwitch.getStyleClass().setAll("toggle-button", "switch-off");
         }
-    }
-
-    private void applyLayoutScale()
-    {
-        double textSize = LayoutScale.scaled(16.0);
-        double titleSize = LayoutScale.scaled(24.0);
-        double padding = LayoutScale.scaled(15.0);
-        double spacing = LayoutScale.scaled(15.0);
-        double buttonFontSize = LayoutScale.scaled(16.0);
-
-        rootLayout.setSpacing(spacing);
-        rootLayout.setPadding(new Insets(padding));
-
-        titleLabel.setStyle(String.format(
-            "-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx; -fx-font-weight: bold;", titleSize));
-        statusLabel.setStyle(String.format(
-            "-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
-
-        switchLabel.setStyle(String.format(
-            "-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
-        statusSwitch.setMinWidth(javafx.scene.layout.Region.USE_PREF_SIZE);
-        switchBox.setSpacing(spacing);
-
-        notesArea.setStyle(String.format(
-            "-fx-text-fill: #1c1c1c; -fx-font-size: %.0fpx;", textSize));
-
-        String baseBtnStyle = "-fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: %.0fpx;";
-        diagnosticButton.setStyle(String.format("-fx-background-color: #3652a1; " + baseBtnStyle, buttonFontSize));
-        closeButton.setStyle(String.format("-fx-background-color: #232853; " + baseBtnStyle, buttonFontSize));
-        deleteButton.setStyle(String.format("-fx-background-color: #e74c3c; " + baseBtnStyle, buttonFontSize));
-
-        buttonsBox.setSpacing(spacing);
     }
 
     private static String statusText(ServerStatus status)
@@ -287,15 +250,12 @@ public class ServerDetailsController
         double targetWidth = LayoutScale.scaled(420.0);
         double targetHeight = LayoutScale.scaled(540.0);
 
-        double textSize = LayoutScale.scaled(16);
-        double padding = LayoutScale.scaled(15);
-
         VBox layout = new VBox(LayoutScale.scaled(15));
-        layout.setStyle(String.format("-fx-padding: %.0f; -fx-background-color: white;", padding));
+        layout.getStyleClass().add("card-panel");
         layout.setAlignment(javafx.geometry.Pos.TOP_LEFT);
 
         Label pingLabel = new Label(pingText);
-        pingLabel.setStyle(String.format("-fx-text-fill: #1c1c1c; -fx-font-family: 'Consolas', monospace; -fx-font-size: %.0fpx;", textSize));
+        pingLabel.getStyleClass().add("ping-console");
         pingLabel.setWrapText(true);
         pingLabel.setMaxWidth(Double.MAX_VALUE);
 
@@ -303,12 +263,14 @@ public class ServerDetailsController
         VBox.setVgrow(spacer, javafx.scene.layout.Priority.ALWAYS);
 
         Button goBackButton = new Button("Ок");
-        goBackButton.setStyle(String.format("-fx-background-color: #3652a1; -fx-text-fill: white; -fx-cursor: hand; -fx-background-radius: 6; -fx-font-weight: bold; -fx-font-size: %.0fpx;", textSize));
+        goBackButton.getStyleClass().add("btn-secondary");
         goBackButton.setMaxWidth(Double.MAX_VALUE);
         goBackButton.setOnAction(e -> diagnosticStage.close());
 
         layout.getChildren().addAll(pingLabel, spacer, goBackButton);
-        diagnosticStage.setScene(new Scene(layout, targetWidth, targetHeight));
+        Scene scene = new Scene(layout, targetWidth, targetHeight);
+        ThemeManager.applyToScene(scene);
+        diagnosticStage.setScene(scene);
         diagnosticStage.showAndWait();
     }
 }

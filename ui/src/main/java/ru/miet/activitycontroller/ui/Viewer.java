@@ -33,6 +33,7 @@ public class Viewer extends Application
         listRoot.setVisible(false);
 
         Scene scene = new Scene(rootStack);
+        ThemeManager.applyToScene(scene);
         stage.setTitle("Мониторинг работоспособности сервисов");
         stage.setScene(scene);
 
