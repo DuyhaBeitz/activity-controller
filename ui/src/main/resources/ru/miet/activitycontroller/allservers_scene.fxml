@@ -37,18 +37,27 @@
                     styleClass="styled-input"
                     maxWidth="1.7976931348623157E308" />
                 
-                <HBox spacing="10">
+                <HBox spacing="8" alignment="CENTER_LEFT">
                     <MenuButton fx:id="sortButton"
                                 text="Сортировать"
                                 maxWidth="1.7976931348623157E308"
                                 HBox.hgrow="ALWAYS"
                                 styleClass="filter-menu-btn">
                         <items>
-                            <MenuItem text="По имени (А-Я)" />
-                            <MenuItem text="По статусу" />
+                            <MenuItem fx:id="sortByStatusItem" text="По тяжести статуса" />
                             <MenuItem fx:id="sortByResponseItem" text="По времени ответа" />
+                            <MenuItem fx:id="sortByNameItem" text="По имени" />
+                            <MenuItem fx:id="sortByDateItem" text="По дате добавления" />
+                            <MenuItem fx:id="sortSmartItem" text="Умная сортировка" />
+                            <MenuItem fx:id="sortByStabilityItem" text="По стабильности" />
                         </items>
                     </MenuButton>
+
+                    <Button fx:id="reverseSortButton"
+                            text="▼"
+                            minWidth="-Infinity"
+                            styleClass="filter-menu-btn" />
+
                     <MenuButton fx:id="filterButton"
                                 text="Выбрать тег"
                                 maxWidth="1.7976931348623157E308"

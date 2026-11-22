@@ -28,6 +28,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AllServersController
 {
@@ -40,7 +41,13 @@ public class AllServersController
     @FXML private MenuButton filterButton;
     @FXML private Label mainLabel;
 
+    @FXML private MenuItem sortByStatusItem;
     @FXML private MenuItem sortByResponseItem;
+    @FXML private MenuItem sortByNameItem;
+    @FXML private MenuItem sortByDateItem;
+    @FXML private MenuItem sortSmartItem;
+    @FXML private MenuItem sortByStabilityItem;
+    @FXML private Button reverseSortButton;
 
     @FXML private ScrollPane detailsScrollPane;
     @FXML private VBox detailsPanel;
@@ -58,6 +65,23 @@ public class AllServersController
     private final Map<Integer, ServerRowView> serverRowsById = new HashMap<>();
     private final Map<Integer, ServerResult> currentServers = new HashMap<>();
     private Integer selectedServerId = null;
+
+    private final Map<Integer, Double> avgResponseCache = new ConcurrentHashMap<>();
+    private boolean isResponseTimeSortActive = false;
+
+    private enum SortMode
+    {
+        NONE,
+        STATUS,
+        RESPONSE_TIME,
+        NAME,
+        DATE_ADDED,
+        SMART,
+        STABILITY
+    }
+
+    private SortMode currentSortMode = SortMode.NONE;
+    private boolean isSortReversed = false;
 
     public Parent getRoot()
     {
@@ -80,12 +104,127 @@ public class AllServersController
             updateFilterPredicate(newText);
         });
 
+
+        sharedList.addListener((ListChangeListener<ServerResult>) change -> {
+            if (isResponseTimeSortActive)
+            {
+                refreshResponseTimeCacheAsync();
+            }
+        });
+
         backButton.setOnAction(e -> mapController.showMapView());
         addButton.setOnAction(e -> mapController.onAddServiceFromList());
 
-        sortByResponseItem.setOnAction(e -> loadAndSortByResponseTime());
+        sortByStatusItem.setOnAction(e -> selectSortMode(SortMode.STATUS, "По тяжести статуса"));
+        sortByResponseItem.setOnAction(e -> selectSortMode(SortMode.RESPONSE_TIME, "По времени ответа"));
+        sortByNameItem.setOnAction(e -> selectSortMode(SortMode.NAME, "По имени"));
+        sortByDateItem.setOnAction(e -> selectSortMode(SortMode.DATE_ADDED, "По дате добавления"));
+        sortSmartItem.setOnAction(e -> selectSortMode(SortMode.SMART, "Умная сортировка"));
+        sortByStabilityItem.setOnAction(e -> selectSortMode(SortMode.STABILITY, "По стабильности"));
+
+        reverseSortButton.setOnAction(e -> toggleSortDirection());
 
         syncRowsWithSortedList();
+    }
+
+    private void selectSortMode(SortMode mode, String buttonTitle)
+    {
+        currentSortMode = mode;
+        isSortReversed = false;
+        reverseSortButton.setText("▼");
+        sortButton.setText(buttonTitle);
+
+        isResponseTimeSortActive = (mode == SortMode.RESPONSE_TIME || mode == SortMode.SMART);
+
+        applyCurrentSort();
+    }
+
+    private void toggleSortDirection()
+    {
+        if (currentSortMode == SortMode.NONE)
+        {
+            return;
+        }
+
+        isSortReversed = !isSortReversed;
+        reverseSortButton.setText(isSortReversed ? "▲" : "▼");
+
+        var current = sortedServers.getComparator();
+        if (current != null)
+        {
+            sortedServers.setComparator(current.reversed());
+        }
+    }
+
+    private void applyCurrentSort()
+    {
+        switch (currentSortMode)
+        {
+            case STATUS -> activateStatusSort();
+            case RESPONSE_TIME -> activateResponseTimeSort();
+            case NAME -> activateNameSort();
+            case DATE_ADDED -> activateDateAddedSort();
+            case SMART -> activateSmartSort();
+            case STABILITY -> activateStabilitySort();
+            case NONE -> sortedServers.setComparator(null);
+        }
+    }
+
+    private void activateStatusSort()
+    {
+        var comp = Comparator.comparingInt(this::getStatusWeight);
+        sortedServers.setComparator(isSortReversed ? comp.reversed() : comp);
+    }
+
+    private int getStatusWeight(ServerResult server)
+    {
+        return switch (server.status())
+        {
+            case ERROR -> 1;
+            case CONTROL -> 2;
+            case WARNING -> 3;
+            case OK -> 4;
+        };
+    }
+
+    private void activateResponseTimeSort()
+    {
+        isResponseTimeSortActive = true;
+
+        var comp = Comparator.comparingDouble((ServerResult s) -> avgResponseCache.getOrDefault(s.id(), -1.0)).reversed();
+        sortedServers.setComparator(isSortReversed ? comp.reversed() : comp);
+        refreshResponseTimeCacheAsync();
+    }
+
+    private void activateNameSort()
+    {
+        var comp = Comparator.comparing(ServerResult::name, String.CASE_INSENSITIVE_ORDER);
+        sortedServers.setComparator(isSortReversed ? comp.reversed() : comp);
+    }
+
+    private void activateDateAddedSort()
+    {
+        var comp = Comparator.comparingInt(ServerResult::id).reversed();
+        sortedServers.setComparator(isSortReversed ? comp.reversed() : comp);
+    }
+
+    private void activateSmartSort()
+    {
+        isResponseTimeSortActive = true;
+
+        Comparator<ServerResult> comp = Comparator
+            .comparingInt(this::getStatusWeight)
+            .thenComparing(
+                Comparator.comparingDouble((ServerResult s) -> avgResponseCache.getOrDefault(s.id(), -1.0)).reversed()
+            );
+
+        sortedServers.setComparator(isSortReversed ? comp.reversed() : comp);
+        refreshResponseTimeCacheAsync();
+    }
+
+    private void activateStabilitySort()
+    {
+        // TODO: реализовать сортировку по стабильности (% успешных пингов)
     }
 
     private void syncRowsWithSortedList()
@@ -146,6 +285,42 @@ public class AllServersController
         });
     }
 
+    private void refreshResponseTimeCacheAsync()
+    {
+        // Берём копию списка серверов, чтобы безопасно читать в фоновом потоке
+        List<ServerResult> snapshot = List.copyOf(mapController.getMasterServers());
+
+        Task<Map<Integer, Double>> task = new Task<>()
+        {
+            @Override
+            protected Map<Integer, Double> call() throws Exception
+            {
+                Map<Integer, Double> freshAverages = new HashMap<>();
+                for (ServerResult s : snapshot)
+                {
+                    Double avg = PingHistory.AverageResponseTime(s.id(), 10);
+                    freshAverages.put(s.id(), avg != null ? avg : -1.0);
+                }
+                return freshAverages;
+            }
+        };
+
+        task.setOnSucceeded(e -> {
+            avgResponseCache.clear();
+            avgResponseCache.putAll(task.getValue());
+
+            // Принудительно заставляем SortedList пересчитать порядок по обновлённому кэшу
+            if (isResponseTimeSortActive)
+            {
+                var currentComp = sortedServers.getComparator();
+                sortedServers.setComparator(null);
+                sortedServers.setComparator(currentComp);
+            }
+        });
+
+        new Thread(task).start();
+    }
+
     private ServerRowView createServerRowView(ServerResult server)
     {
         HBox serverRow = new HBox(8);
@@ -173,37 +348,6 @@ public class AllServersController
         return new ServerRowView(serverRow, statusIndicator, nameLabel, null, server.status());
     }
 
-    private void loadAndSortByResponseTime()
-    {
-        Task<Map<Integer, Double>> task = new Task<>()
-        {
-            @Override
-            protected Map<Integer, Double> call() throws Exception
-            {
-                Map<Integer, Double> averages = new HashMap<>();
-                for (ServerResult s : mapController.getMasterServers())
-                {
-                    Double avg = PingHistory.AverageResponseTime(s.id(), 10);
-                    averages.put(s.id(), avg != null ? avg : -1.0);
-                }
-                return averages;
-            }
-        };
-
-        task.setOnSucceeded(e -> {
-            Map<Integer, Double> averages = task.getValue();
-            sortedServers.setComparator(
-                Comparator.comparingDouble((ServerResult s) -> averages.getOrDefault(s.id(), -1.0)).reversed()
-            );
-        });
-
-        task.setOnFailed(e -> {
-            task.getException().printStackTrace();
-            Viewer.showErrorAlert("Ошибка", "Не удалось отсортировать: " + task.getException().getMessage());
-        });
-
-        new Thread(task).start();
-    }
 
     private void showServerDetails(ServerResult server)
     {

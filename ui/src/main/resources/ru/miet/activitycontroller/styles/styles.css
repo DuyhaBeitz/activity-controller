@@ -193,6 +193,7 @@
 {
     -fx-background-color: -bg-filter;
     -fx-font-size: 1.1em;
+    -fx-text-fill: -text-primary;
     -fx-background-radius: 4px;
     -fx-padding: 0.4em 0.8em;
     -fx-cursor: hand;
