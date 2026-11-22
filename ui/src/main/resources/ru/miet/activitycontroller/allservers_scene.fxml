@@ -7,6 +7,7 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
@@ -29,6 +30,12 @@
         <SplitPane dividerPositions="0.3" styleClass="clean-split-pane">
             <VBox minWidth="320" spacing="10" style="-fx-padding: 15;">
                 <Label fx:id="mainLabel" text="Все серверы" styleClass="title-large"/>
+
+                <TextField
+                    fx:id="searchField"
+                    promptText="Поиск по имени или адресу"
+                    styleClass="styled-input"
+                    maxWidth="1.7976931348623157E308" />
                 
                 <HBox spacing="10">
                     <MenuButton fx:id="sortButton"

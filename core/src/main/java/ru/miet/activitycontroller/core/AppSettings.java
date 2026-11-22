@@ -1,4 +1,4 @@
-package ru.miet.activitycontroller.ui;
+package ru.miet.activitycontroller.core;
 
 import java.util.prefs.Preferences;
 

@@ -3,6 +3,7 @@ package ru.miet.activitycontroller.ui;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Window;
+import ru.miet.activitycontroller.core.AppSettings;
 
 public class ThemeManager
 {
@@ -62,7 +63,7 @@ public class ThemeManager
         AppSettings.setDarkTheme(dark);
     }
 
-    public static boolean IsDarkTheme()
+    public static boolean isDarkTheme()
     {
         return isDarkTheme;
     }

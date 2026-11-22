@@ -13,6 +13,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -68,6 +70,8 @@ public class MapController
     private ServerDetailsController openDetailsController;
     private AllServersController allServersController;
 
+    private final ObservableList<ServerResult> masterServers = FXCollections.observableArrayList();
+
     private final Map<Integer, ServerRowView> serverRowsById = new HashMap<>();
     private final Map<Integer, ServerResult> serversById = new HashMap<>();
 
@@ -81,6 +85,11 @@ public class MapController
     public Database getDatabase()
     {
         return database;
+    }
+
+    public ObservableList<ServerResult> getMasterServers()
+    {
+        return masterServers;
     }
 
     private ScheduledExecutorService monitoringScheduler;
@@ -119,12 +128,6 @@ public class MapController
         }
 
         ThemeManager.registerMapController(this);
-        webEngine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
-            if (newState == Worker.State.SUCCEEDED) {
-                // после загрузки HTML применяем текущую тему
-                updateMapTheme(ThemeManager.IsDarkTheme());
-            }
-        });
 
         // Слушатель загрузки
         webEngine.getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
@@ -134,7 +137,7 @@ public class MapController
                 window.setMember("javaApp", this);
 
                 webEngine.executeScript("window.deviceScreenScale = " + LayoutScale.getScreenScale() + ";");
-                updateMapTheme(ThemeManager.IsDarkTheme());
+                updateMapTheme(ThemeManager.isDarkTheme());
                 loadServersFromDatabase();
 
                 startAutoMonitoring();
@@ -174,6 +177,19 @@ public class MapController
         this.allServersController = controller;
     }
 
+    private void upsertServerInMasterList(ServerResult updated)
+    {
+        for (int i = 0; i < masterServers.size(); i++)
+        {
+            if (masterServers.get(i).id() == updated.id())
+            {
+                masterServers.set(i, updated);
+                return;
+            }
+        }
+        masterServers.add(updated);
+    }
+
     private void loadServersFromDatabase()
     {
         if (database == null)
@@ -188,6 +204,7 @@ public class MapController
         try
         {
             List<Database.ServerResult> servers = database.getServers();
+            masterServers.setAll(servers);
             System.out.println("Загружено серверов из БД: " + servers.size());
 
             for (Database.ServerResult server : servers)
@@ -214,11 +231,6 @@ public class MapController
         {
             System.err.println("Ошибка при загрузке данных из БД на карту: " + e.getMessage());
         }
-    }
-
-    public List<ServerResult> getAllServers()
-    {
-        return new ArrayList<>(serversById.values());
     }
 
     @FXML
@@ -348,6 +360,7 @@ public class MapController
                 ServerResult server = new ServerResult(id, name, lat, lng, ServerStatus.valueOf(status), address, notes);
                 createServerRow(server);
                 serversById.put(id, server);
+                masterServers.add(server);
             }
             catch(Exception e)
             {
@@ -434,6 +447,7 @@ public class MapController
         }
 
         serversById.remove(id);
+        masterServers.removeIf(s -> s.id() == id);
 
         if (openDetailsController != null && openDetailsController.getServerId() == id)
         {
@@ -494,13 +508,9 @@ public class MapController
         ServerResult current = serversById.get(id);
         if (current != null && current.status() != status)
         {
-            serversById.put(id, new ServerResult(
-                current.id(), current.name(), current.latitude(), current.longitude(), status, current.address(), current.notes()));
-        }
-
-        if (allServersController != null)
-        {
-            allServersController.updateList(getAllServers());
+            ServerResult updatedServer = new ServerResult(current.id(), current.name(), current.latitude(), current.longitude(), status, current.address(), current.notes());
+            serversById.put(id, updatedServer);
+            upsertServerInMasterList(updatedServer);
         }
     }
 
@@ -571,10 +581,7 @@ public class MapController
                 }
             }
 
-            if (allServersController != null)
-            {
-                allServersController.updateList(getAllServers());
-            }
+            masterServers.setAll(updatedServers);
 
             System.out.println("Информация о серверах обновлена!");
         }

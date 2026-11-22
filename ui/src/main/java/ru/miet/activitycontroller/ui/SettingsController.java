@@ -6,6 +6,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.stage.Stage;
+import ru.miet.activitycontroller.core.AppSettings;
 
 public class SettingsController
 {
@@ -19,7 +20,7 @@ public class SettingsController
     @FXML
     public void initialize()
     {
-        initialDarkTheme = ThemeManager.IsDarkTheme();
+        initialDarkTheme = ThemeManager.isDarkTheme();
         themeSwitch.setSelected(initialDarkTheme);
         updateSwitchVisuals(initialDarkTheme);
     }
@@ -57,7 +58,7 @@ public class SettingsController
 
     public void restoreIfCancelled()
     {
-        if (ThemeManager.IsDarkTheme() != initialDarkTheme)
+        if (ThemeManager.isDarkTheme() != initialDarkTheme)
         {
             ThemeManager.setDarkTheme(initialDarkTheme);
         }
