@@ -603,6 +603,11 @@ public class MapController
             monitoringScheduler.shutdown();
         }
 
+        if (allServersController != null)
+        {
+            allServersController.stopLiveAxisTicker();
+        }
+
         try
         {
             if (monitoringScheduler != null)

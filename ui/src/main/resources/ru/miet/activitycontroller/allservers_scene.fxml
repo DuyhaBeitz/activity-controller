@@ -11,6 +11,11 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.ToggleButton?>
+<?import javafx.scene.layout.Region?>
 
 <BorderPane xmlns="http://javafx.com" 
             xmlns:fx="http://javafx.com" 
@@ -85,6 +90,69 @@
                     <VBox fx:id="detailsPanel" styleClass="card-panel" style="-fx-padding: 20;" spacing="15">
                         <Label fx:id="detailsTitle" text="Сервер: ..." styleClass="title-large" />
                         <Label fx:id="detailsStatus" text="Текущий статус: " styleClass="label-regular" />
+
+                        <!-- БЛОК ГРАФИКА АКТИВНОСТИ -->
+                        <VBox fx:id="chartSection" spacing="12" styleClass="chart-container">
+                            
+                            <!-- Верхняя панель: выбор параметра и периода -->
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <ComboBox fx:id="metricComboBox"
+                                        styleClass="styled-combo"
+                                        minWidth="-Infinity" />
+
+                                <ComboBox fx:id="yScaleComboBox"
+                                        styleClass="styled-combo"
+                                        minWidth="-Infinity" />
+
+                                <Region HBox.hgrow="ALWAYS" />
+
+                                <Button fx:id="liveModeBtn"
+                                        text="● Live"
+                                        minWidth="-Infinity"
+                                        styleClass="live-btn" />
+
+                                <HBox spacing="4" styleClass="range-bar">
+                                    <ToggleButton fx:id="range15mBtn" text="15 мин" selected="true" styleClass="range-toggle" />
+                                    <ToggleButton fx:id="range1hBtn" text="1 час" styleClass="range-toggle" />
+                                    <ToggleButton fx:id="range24hBtn" text="24 часа" styleClass="range-toggle" />
+                                    <ToggleButton fx:id="range7dBtn" text="7 дней" styleClass="range-toggle" />
+                                </HBox>
+                            </HBox>
+
+                            <!-- Мини-карточки сводной статистики -->
+                            <HBox spacing="10">
+                                <VBox spacing="4" HBox.hgrow="ALWAYS" styleClass="stat-card">
+                                    <Label text="Среднее" styleClass="stat-title" />
+                                    <Label fx:id="avgStatLabel" text="—" styleClass="stat-value" />
+                                </VBox>
+                                <VBox spacing="4" HBox.hgrow="ALWAYS" styleClass="stat-card">
+                                    <Label text="Минимум" styleClass="stat-title" />
+                                    <Label fx:id="minStatLabel" text="—" styleClass="stat-value" />
+                                </VBox>
+                                <VBox spacing="4" HBox.hgrow="ALWAYS" styleClass="stat-card">
+                                    <Label text="Максимум" styleClass="stat-title" />
+                                    <Label fx:id="maxStatLabel" text="—" styleClass="stat-value" />
+                                </VBox>
+                                <VBox spacing="4" HBox.hgrow="ALWAYS" styleClass="stat-card">
+                                    <Label text="Аптайм" styleClass="stat-title" />
+                                    <Label fx:id="uptimeStatLabel" text="—" styleClass="stat-value" />
+                                </VBox>
+                            </HBox>
+
+                            <!-- Сам график -->
+                            <LineChart fx:id="activityChart"
+                                    animated="false"
+                                    createSymbols="false"
+                                    legendVisible="false"
+                                    styleClass="activity-chart">
+                                <xAxis>
+                                    <NumberAxis fx:id="xAxis" forceZeroInRange="false" autoRanging="true" />
+                                </xAxis>
+                                <yAxis>
+                                    <NumberAxis fx:id="yAxis" forceZeroInRange="true" autoRanging="true" />
+                                </yAxis>
+                            </LineChart>
+                        </VBox>
                         
                         <VBox fx:id="notesBox" spacing="5" visible="false" managed="false">
                             <Label fx:id="notesLabel" text="Заметки:" styleClass="label-bold" />

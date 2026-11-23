@@ -316,3 +316,149 @@
 {
     -fx-text-fill: -text-primary;
 }
+
+/* ГРАФИК АКТИВНОСТИ И КАРТОЧКИ СТАТИСТИКИ */
+.chart-container
+{
+    -fx-background-color: -bg-main;
+    -fx-border-color: -border-color;
+    -fx-border-width: 1px;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 1em;
+}
+
+.styled-combo {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-font-size: 1em;
+    -fx-cursor: hand;
+}
+.styled-combo .list-cell {
+    -fx-text-fill: -text-primary;
+    -fx-background-color: transparent;
+}
+.styled-combo .arrow-button .arrow {
+    -fx-background-color: -text-primary;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border-color;
+    -fx-border-width: 1px;
+}
+.combo-box-popup .list-cell {
+    -fx-background-color: -bg-card;
+    -fx-text-fill: -text-primary;
+    -fx-padding: 0.45em 0.8em;
+    -fx-cursor: hand;
+}
+.combo-box-popup .list-cell:hover,
+.combo-box-popup .list-cell:filled:selected {
+    -fx-background-color: -bg-row-hover;
+    -fx-text-fill: -text-primary;
+}
+
+.range-bar
+{
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-padding: 2px;
+}
+
+.range-toggle
+{
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 0.95em;
+    -fx-padding: 0.35em 0.7em;
+    -fx-background-radius: 4px;
+    -fx-cursor: hand;
+}
+.range-toggle:hover
+{
+    -fx-background-color: -bg-row-hover;
+}
+.range-toggle:selected
+{
+    -fx-background-color: -btn-secondary;
+    -fx-text-fill: -text-on-dark;
+    -fx-font-weight: bold;
+}
+
+.stat-card
+{
+    -fx-background-color: -bg-card;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 6px;
+    -fx-background-radius: 6px;
+    -fx-padding: 0.7em 0.9em;
+}
+
+.stat-title
+{
+    -fx-font-size: 0.9em;
+    -fx-text-fill: -text-primary;
+    -fx-opacity: 0.75;
+}
+
+.stat-value
+{
+    -fx-font-size: 1.25em;
+    -fx-font-weight: bold;
+    -fx-text-fill: -text-accent;
+}
+
+.activity-chart
+{
+    -fx-padding: 0.3em 0 0 0;
+}
+.activity-chart .chart-plot-background
+{
+    -fx-background-color: -bg-card;
+}
+.activity-chart .chart-vertical-grid-lines,
+.activity-chart .chart-horizontal-grid-lines
+{
+    -fx-stroke: -border-color;
+    -fx-stroke-dash-array: 3 3;
+}
+.activity-chart .axis
+{
+    -fx-tick-label-fill: -text-primary;
+    -fx-font-size: 0.85em;
+}
+.activity-chart .axis-label
+{
+    -fx-text-fill: -text-primary;
+}
+.activity-chart .chart-series-line
+{
+    -fx-stroke: -btn-secondary;
+    -fx-stroke-width: 2.5px;
+}
+
+.live-btn
+{
+    -fx-background-color: -bg-card;
+    -fx-text-fill: #2ecc71;
+    -fx-border-color: -border-color;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+    -fx-font-weight: bold;
+    -fx-font-size: 0.95em;
+    -fx-padding: 0.4em 0.8em;
+    -fx-cursor: default;
+}
+
+.live-btn.paused
+{
+    -fx-background-color: -btn-secondary;
+    -fx-text-fill: -text-on-dark;
+    -fx-border-color: transparent;
+    -fx-cursor: hand;
+}
