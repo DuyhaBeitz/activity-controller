@@ -7,6 +7,9 @@ import java.util.stream.Collectors;
 
 public class Pinger {
 
+    /** Overall time limit for one ping, in seconds (passed to curl --max-time). */
+    private static final int MAX_TIME_SECONDS = 10;
+
     public record PingResult(
         int httpCode,
         double dnsTime,
@@ -57,7 +60,7 @@ public class Pinger {
 
     /**
      * @param host    The hostname or IP address to probe (e.g., "1.1.1.1")
-     * @return The raw JSON output from tcping, or null if an error occurred.
+     * @return The ping result; on any failure, a result with httpCode 0 and totalTime = max time.
      */
     public static PingResult runPing(String host) {
         try {
@@ -75,6 +78,7 @@ public class Pinger {
                     crl,
                 "-sS",
                 "-L",
+                "--max-time", String.valueOf(MAX_TIME_SECONDS),
                 "-o", devnul,
                 "-w",
                 "%{http_code}\t" +
@@ -103,7 +107,7 @@ public class Pinger {
             int exitCode = process.waitFor();
 
             if (exitCode != 0 || line == null) {
-                return null;
+                return failed(host);
             }
 
             String[] p = line.split("\t", -1);
@@ -125,7 +129,15 @@ public class Pinger {
             );
 
         } catch (Exception e) {
-            return null;
+            return failed(host);
         }
+    }
+
+    /**
+     * Result used when no response was received: httpCode 0 marks the failure,
+     * totalTime is the timeout so averages are penalised.
+     */
+    private static PingResult failed(String host) {
+        return new PingResult(0, 0, 0, 0, 0, 0, 0, MAX_TIME_SECONDS, 0, 0, "", 0, host);
     }
 }
