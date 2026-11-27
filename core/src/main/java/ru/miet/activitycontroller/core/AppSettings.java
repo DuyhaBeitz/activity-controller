@@ -8,18 +8,18 @@ public class AppSettings
 
     private static final String KEY_DARK_THEME = "dark_theme";
     // private static final String KEY_POLLING_INTERVAL = "polling_interval_sec";
-    // private static final String KEY_WARNING_THRESHOLD = "warning_threshold_sec";
+    private static final String KEY_WARNING_THRESHOLD = "warning_threshold_sec";
 
     private static boolean darkTheme;
     // private static int pollingIntervalSec;
-    // private static double warningThresholdSec;
+    private static double warningThresholdSec;
 
     // Загружаем сохранённые настройки при первом обращении к классу
     static
     {
         darkTheme = PREFS.getBoolean(KEY_DARK_THEME, false);
         // pollingIntervalSec = PREFS.getInt(KEY_POLLING_INTERVAL, 5);
-        // warningThresholdSec = PREFS.getDouble(KEY_WARNING_THRESHOLD, 3.0);
+        warningThresholdSec = PREFS.getDouble(KEY_WARNING_THRESHOLD, 3.0);
     }
 
     public static boolean isDarkTheme()
@@ -44,14 +44,14 @@ public class AppSettings
     //     PREFS.putInt(KEY_POLLING_INTERVAL, seconds);
     // }
 
-    // public static double getWarningThresholdSec()
-    // {
-    //     return warningThresholdSec;
-    // }
+     public static double getWarningThresholdSec()
+     {
+         return warningThresholdSec;
+     }
 
-    // public static void setWarningThresholdSec(double seconds)
-    // {
-    //     warningThresholdSec = seconds;
-    //     PREFS.putDouble(KEY_WARNING_THRESHOLD, seconds);
-    // }
+     public static void setWarningThresholdSec(double seconds)
+     {
+         warningThresholdSec = seconds;
+         PREFS.putDouble(KEY_WARNING_THRESHOLD, seconds);
+     }
 }

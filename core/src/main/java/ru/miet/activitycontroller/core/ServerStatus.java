@@ -9,7 +9,7 @@ public enum ServerStatus {
     public static ServerStatus DetermineServerStatus(Pinger.PingResult ping) {
         if (ping == null) {return ERROR;}
         if (ping.httpCode() < 200 || ping.httpCode() >= 400) {return ERROR;}
-        if (ping.totalTime() > 3.0) {return WARNING;}
+        if (ping.ttfb() > AppSettings.getWarningThresholdSec()) {return WARNING;}
         return OK;
     }
 }
